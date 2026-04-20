@@ -1,0 +1,23 @@
+# Dependências
+node_modules/
+backend/node_modules/
+
+# Variáveis de ambiente (nunca commitar)
+.env
+backend/.env
+*.env
+
+# Backups gerados pelo app
+cafe-leal-backup-*.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
