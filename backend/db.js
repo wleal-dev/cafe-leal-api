@@ -1,9 +1,12 @@
 require('dotenv').config({ path: __dirname + '/.env' });
 const { Pool, types } = require('pg');
 
-// PostgreSQL retorna NUMERIC como string por padrão.
 // OID 1700 = NUMERIC — converter para float em toda a aplicação.
 types.setTypeParser(1700, (val) => parseFloat(val));
+
+// OID 1082 = DATE — retornar como string "YYYY-MM-DD" (evita conversão UTC→timestamp
+// que desloca a data em fusos negativos como UTC-3).
+types.setTypeParser(1082, (val) => val);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

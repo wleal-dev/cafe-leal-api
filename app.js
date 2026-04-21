@@ -1337,7 +1337,7 @@ function switchTab(el, tabName) {
 function renderRegistroSaida() {
   const container = document.getElementById('compras-content');
   if (!container) return;
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = localDateKey(new Date());
   container.innerHTML = `
     <div class="card" style="margin-bottom:1.5rem;">
       <div class="card-title">Registrar saída</div>
@@ -1382,7 +1382,7 @@ function renderRegistroCompras() {
   const container = document.getElementById('compras-content');
   if (!container) return;
 
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = localDateKey(new Date());
 
   container.innerHTML = `
 
@@ -1536,7 +1536,7 @@ async function salvarCompra(data, fornecedor, cnpj, nf, valor, pagamento, status
     });
     compras.push(nova);
 
-    document.getElementById('compra-data').value = new Date().toISOString().split('T')[0];
+    document.getElementById('compra-data').value = localDateKey(new Date());
     const fornSelect = document.getElementById('compra-fornecedor-nome');
     if (fornSelect) fornSelect.value = '';
     document.getElementById('compra-cnpj').value     = '';
@@ -1976,7 +1976,7 @@ async function adicionarSaidaAvulsa() {
   try {
     const nova = await apiFetch('/saidas', { method: 'POST', body: { data, descricao, categoria, valor } });
     saidas.push(nova);
-    document.getElementById('saida-data').value  = new Date().toISOString().split('T')[0];
+    document.getElementById('saida-data').value  = localDateKey(new Date());
     document.getElementById('saida-valor').value = '';
     document.getElementById('saida-desc').value  = '';
     renderListaSaidas();
