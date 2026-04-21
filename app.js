@@ -111,6 +111,7 @@ async function fazerLogin() {
 
     localStorage.setItem('cl_token', data.token);
     currentUser = data.user;
+    _prepararPaginaInicial();
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').classList.add('active');
     document.getElementById('user-display').textContent = data.user.nome;
@@ -146,6 +147,7 @@ async function checkSession() {
     if (!user) return;
 
     currentUser = user;
+    _prepararPaginaInicial();
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').classList.add('active');
     document.getElementById('user-display').textContent = user.nome;
@@ -160,9 +162,20 @@ async function checkSession() {
   }
 }
 
+// Ajusta a página ativa no DOM antes do app ficar visível, evitando flash
+function _prepararPaginaInicial() {
+  if (!isFinanceiro()) return;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const pg = document.getElementById('page-compras');
+  const tb = document.getElementById('tab-compras');
+  if (pg) pg.classList.add('active');
+  if (tb) tb.classList.add('active');
+}
+
 function inicializarPagina() {
   if (isFinanceiro()) {
-    showPage('compras', document.getElementById('tab-compras'));
+    renderCompras();
     return;
   }
   renderProdutosComanda();
