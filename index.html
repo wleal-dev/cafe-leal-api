@@ -57,12 +57,12 @@
   </header>
 
   <nav>
-    <div class="tab active" onclick="showPage('nova-comanda', this)">＋ Nova comanda</div>
-    <div class="tab" onclick="showPage('comandas', this)">Comandas abertas <span class="tab-badge" id="badge-abertas">0</span></div>
+    <div class="tab active" id="tab-nova-comanda" onclick="showPage('nova-comanda', this)">＋ Nova comanda</div>
+    <div class="tab" id="tab-comandas" onclick="showPage('comandas', this)">Comandas abertas <span class="tab-badge" id="badge-abertas">0</span></div>
     <div class="tab" id="tab-produtos" onclick="showPage('produtos', this)" style="display:none;">Produtos</div>
     <div class="tab" id="tab-compras" onclick="showPage('compras', this)" style="display:none;">Compras</div>
     <div class="tab" id="tab-financeiro" onclick="showPage('financeiro', this)" style="display:none;">Financeiro</div>
-    <div class="tab" onclick="showPage('caixa', this)">Caixa do dia</div>
+    <div class="tab" id="tab-caixa" onclick="showPage('caixa', this)">Caixa do dia</div>
   </nav>
 
   <!-- NOVA COMANDA -->

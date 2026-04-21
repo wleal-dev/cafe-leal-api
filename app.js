@@ -161,6 +161,10 @@ async function checkSession() {
 }
 
 function inicializarPagina() {
+  if (isFinanceiro()) {
+    showPage('compras', document.getElementById('tab-compras'));
+    return;
+  }
   renderProdutosComanda();
   renderItems();
   inicializarFiltrosCategorias();
@@ -172,6 +176,10 @@ function isGerente() {
 
 function isAtendente() {
   return currentUser && currentUser.role === 'Atendente';
+}
+
+function isFinanceiro() {
+  return currentUser && currentUser.role === 'Financeiro';
 }
 
 // =================== CLOCK ===================
@@ -211,11 +219,21 @@ document.addEventListener('keydown', (e) => {
 
 // =================== NAVEGAÇÃO ===================
 function showPage(page, el) {
-  const restrictedPages = ['produtos', 'compras', 'financeiro'];
-  if (restrictedPages.includes(page) && !isGerente()) {
+  // Financeiro só acessa compras e financeiro
+  if (isFinanceiro() && page !== 'compras' && page !== 'financeiro') {
+    showPage('compras', document.getElementById('tab-compras'));
+    return;
+  }
+  // Produtos: apenas Gerente
+  if (page === 'produtos' && !isGerente()) {
     showToast('Acesso restrito a Gerentes', 'error');
-    const primeiraTab = document.querySelector('.tab');
-    showPage('nova-comanda', primeiraTab);
+    showPage('nova-comanda', document.getElementById('tab-nova-comanda'));
+    return;
+  }
+  // Compras e Financeiro: Gerente ou Financeiro
+  if ((page === 'compras' || page === 'financeiro') && !isGerente() && !isFinanceiro()) {
+    showToast('Acesso restrito', 'error');
+    showPage('nova-comanda', document.getElementById('tab-nova-comanda'));
     return;
   }
 
@@ -247,9 +265,12 @@ function updateAccessControls() {
   if (limparBtn) limparBtn.style.display = isGerente() ? 'inline-flex' : 'none';
 
   const tabs = {
-    'tab-produtos': isGerente(),
-    'tab-compras': isGerente(),
-    'tab-financeiro': isGerente(),
+    'tab-nova-comanda': !isFinanceiro(),
+    'tab-comandas':     !isFinanceiro(),
+    'tab-caixa':        !isFinanceiro(),
+    'tab-produtos':     isGerente(),
+    'tab-compras':      isGerente() || isFinanceiro(),
+    'tab-financeiro':   isGerente() || isFinanceiro(),
   };
 
   Object.entries(tabs).forEach(([id, show]) => {

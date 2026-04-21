@@ -6,14 +6,14 @@
 -- -------------------------------------------------------------
 -- USERS
 -- Substitui array USERS hardcoded no frontend
--- role: 'Gerente' | 'Atendente'
+-- role: 'Gerente' | 'Atendente' | 'Financeiro'
 -- -------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
   id       SERIAL PRIMARY KEY,
   username VARCHAR(50)  NOT NULL UNIQUE,
   senha    VARCHAR(255) NOT NULL,          -- bcrypt hash
   nome     VARCHAR(100) NOT NULL,
-  role     VARCHAR(20)  NOT NULL CHECK (role IN ('Gerente', 'Atendente')),
+  role     VARCHAR(20)  NOT NULL CHECK (role IN ('Gerente', 'Atendente', 'Financeiro')),
   ativo    BOOLEAN      NOT NULL DEFAULT TRUE,
   criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
