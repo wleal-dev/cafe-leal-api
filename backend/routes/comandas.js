@@ -81,11 +81,17 @@ router.post('/', async (req, res) => {
     );
     const comandaId = rows[0].id;
 
-    for (const item of itens) {
+    if (itens.length) {
       await client.query(
         `INSERT INTO comanda_itens (comanda_id, nome, qty, preco, nota)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [comandaId, item.nome, item.qty, item.preco, item.nota || null]
+         SELECT $1, unnest($2::text[]), unnest($3::int[]), unnest($4::numeric[]), unnest($5::text[])`,
+        [
+          comandaId,
+          itens.map(i => i.nome),
+          itens.map(i => i.qty),
+          itens.map(i => i.preco),
+          itens.map(i => i.nota || ''),
+        ]
       );
     }
 
@@ -125,11 +131,17 @@ router.put('/:id', async (req, res) => {
 
     if (Array.isArray(itens)) {
       await client.query('DELETE FROM comanda_itens WHERE comanda_id = $1', [req.params.id]);
-      for (const item of itens) {
+      if (itens.length) {
         await client.query(
           `INSERT INTO comanda_itens (comanda_id, nome, qty, preco, nota)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [req.params.id, item.nome, item.qty, item.preco, item.nota || null]
+           SELECT $1, unnest($2::text[]), unnest($3::int[]), unnest($4::numeric[]), unnest($5::text[])`,
+          [
+            req.params.id,
+            itens.map(i => i.nome),
+            itens.map(i => i.qty),
+            itens.map(i => i.preco),
+            itens.map(i => i.nota || ''),
+          ]
         );
       }
     }
