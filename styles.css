@@ -1096,6 +1096,12 @@ input:focus, select:focus {
   transition: transform 0.2s;
 }
 
+.comanda-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
 /* RESPONSIVE */
 @media (max-width: 640px) {
   .form-row { grid-template-columns: 1fr; }
@@ -1108,4 +1114,12 @@ input:focus, select:focus {
   .logo-tagline { display: none; }
   .header-user { display: none; }
   .login-card { margin: 1rem; padding: 2rem 1.5rem; }
+
+  /* Nova Comanda: empilha produtos abaixo em mobile */
+  .comanda-layout-grid { grid-template-columns: 1fr; }
+  .produtos-panel { position: static; }
+
+  /* Compras: abas quebram linha em vez de transbordar */
+  #compras-tabs { flex-wrap: wrap; }
+  .compras-tab .tab { flex: 1 1 auto; text-align: center; min-width: max-content; }
 }
