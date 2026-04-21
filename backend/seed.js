@@ -16,9 +16,14 @@ async function seed() {
     console.log('Tabelas criadas com sucesso.');
 
     // 2. Inserir usuários padrão
+    const senhaAdmin = process.env.SENHA_ADMIN;
+    const senhaCaixa = process.env.SENHA_CAIXA;
+    if (!senhaAdmin || !senhaCaixa) {
+      throw new Error('Defina SENHA_ADMIN e SENHA_CAIXA no arquivo .env antes de rodar o seed');
+    }
     const usuarios = [
-      { username: 'admin', senha: 'admin123', nome: 'Administrador', role: 'Gerente'    },
-      { username: 'caixa', senha: 'caixa123', nome: 'Caixa',         role: 'Atendente' },
+      { username: 'admin', senha: senhaAdmin, nome: 'Administrador', role: 'Gerente'    },
+      { username: 'caixa', senha: senhaCaixa, nome: 'Caixa',         role: 'Atendente' },
     ];
 
     for (const u of usuarios) {

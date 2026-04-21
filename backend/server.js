@@ -43,6 +43,10 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Café Leal rodando na porta ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Café Leal rodando na porta ${PORT}`);
+  });
+}
+
+module.exports = app;

@@ -214,9 +214,14 @@ async function migrar() {
     const { rows: usersExistentes } = await client.query('SELECT COUNT(*) FROM users');
     if (parseInt(usersExistentes[0].count) === 0) {
       console.log('      Criando usuários padrão (admin / caixa)...');
+      const senhaAdmin = process.env.SENHA_ADMIN;
+      const senhaCaixa = process.env.SENHA_CAIXA;
+      if (!senhaAdmin || !senhaCaixa) {
+        throw new Error('Defina SENHA_ADMIN e SENHA_CAIXA no arquivo .env antes de rodar a migração');
+      }
       const usuarios = [
-        { username: 'admin', senha: 'admin123', nome: 'Administrador', role: 'Gerente' },
-        { username: 'caixa', senha: 'caixa123', nome: 'Caixa', role: 'Atendente' },
+        { username: 'admin', senha: senhaAdmin, nome: 'Administrador', role: 'Gerente' },
+        { username: 'caixa', senha: senhaCaixa, nome: 'Caixa', role: 'Atendente' },
       ];
       for (const u of usuarios) {
         const hash = await bcrypt.hash(u.senha, 10);

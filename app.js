@@ -35,9 +35,9 @@ let categorias   = [];
 let compras      = [];
 let fornecedores = [];
 let saidas       = [];
-let budgetSemanal = 800;
 let config        = {};
 
+let avulsoLiberado   = false;
 let comandaParaFechar = null;
 let splitMode     = 'equal';
 let splitSelection = [];
@@ -67,7 +67,6 @@ async function carregarDados() {
     fornecedores  = _forn  || [];
     saidas        = _said  || [];
     config        = _cfg   || {};
-    budgetSemanal = parseFloat(config.budget_semanal) || 800;
   } catch (err) {
     console.error('Erro ao carregar dados:', err);
     showToast('Erro ao conectar com o servidor', 'error');
@@ -210,8 +209,7 @@ function showPage(page, el) {
     inicializarFiltrosCategorias();
     renderProdutosComanda();
   }
-  if (page === 'caixa') renderCaixa();
-  if (page === 'relatorios') renderRelatorios();
+  if (page === 'caixa') { renderCaixa(); renderRelatorios(); }
   if (page === 'produtos') renderProdutos();
   if (page === 'compras') renderCompras();
   if (page === 'financeiro') renderFinanceiro();
@@ -558,6 +556,9 @@ async function abrirComanda() {
     });
     comandas.push(novaComanda);
     itensComanda = [];
+    avulsoLiberado = false;
+    document.getElementById('form-item-avulso').style.display = 'none';
+    document.getElementById('btn-liberar-avulso').style.display = '';
     document.getElementById('cliente-nome').value = '';
     document.getElementById('cliente-mesa').value = '';
     renderItems();
@@ -823,7 +824,13 @@ function abrirEdicaoItem(comandaId, itemIndex) {
   document.getElementById('edit-item-nome').value  = item.nome;
   document.getElementById('edit-item-qty').value   = item.qty;
   document.getElementById('edit-item-preco').value = item.preco.toFixed(2);
+  document.getElementById('edit-item-total').value = 'R$ ' + (item.preco * item.qty).toFixed(2);
   document.getElementById('edit-item-nota').value  = item.nota || '';
+  const qtyInput = document.getElementById('edit-item-qty');
+  qtyInput.oninput = function() {
+    const q = parseInt(this.value) || 1;
+    document.getElementById('edit-item-total').value = 'R$ ' + (item.preco * q).toFixed(2);
+  };
   document.getElementById('modal-editar-item').classList.add('open');
 }
 
@@ -836,15 +843,12 @@ function fecharEdicaoItem() {
 async function salvarEdicaoItem() {
   const comanda = comandas.find(c => c.id === editComandaId);
   if (!comanda || editItemIndex == null || !comanda.itens[editItemIndex]) return;
-  const nome  = document.getElementById('edit-item-nome').value.trim();
-  const qty   = parseInt(document.getElementById('edit-item-qty').value) || 1;
-  const preco = parseFloat(document.getElementById('edit-item-preco').value);
-  const nota  = document.getElementById('edit-item-nota').value.trim();
-  if (!nome) return showToast('Informe o nome do item', 'error');
-  if (isNaN(preco) || preco <= 0) return showToast('Informe um preço válido', 'error');
+  const itemOriginal = comanda.itens[editItemIndex];
+  const qty  = parseInt(document.getElementById('edit-item-qty').value) || 1;
+  const nota = document.getElementById('edit-item-nota').value.trim();
 
   const novosItens = [...comanda.itens];
-  novosItens[editItemIndex] = { nome, qty, preco, nota };
+  novosItens[editItemIndex] = { nome: itemOriginal.nome, qty, preco: itemOriginal.preco, nota };
   const novoTotal = novosItens.reduce((s, i) => s + i.preco * i.qty, 0);
 
   try {
@@ -950,6 +954,30 @@ function verificarDesconto() {
     preview.style.display = valido ? 'block' : 'none';
     previewValor.textContent = 'R$ ' + descAplicado.toFixed(2);
   }
+}
+
+function abrirModalSenhaAvulso() {
+  document.getElementById('modal-senha-avulso').classList.add('open');
+  document.getElementById('senha-gerente-avulso').value = '';
+  setTimeout(() => document.getElementById('senha-gerente-avulso').focus(), 100);
+}
+
+function fecharModalSenhaAvulso() {
+  document.getElementById('modal-senha-avulso').classList.remove('open');
+}
+
+async function confirmarSenhaAvulso() {
+  const senha = document.getElementById('senha-gerente-avulso').value;
+  try {
+    await apiFetch('/auth/verificar-senha', { method: 'POST', body: { pass: senha } });
+  } catch {
+    return showToast('Senha da gerente incorreta', 'error');
+  }
+  avulsoLiberado = true;
+  fecharModalSenhaAvulso();
+  document.getElementById('form-item-avulso').style.display = 'block';
+  document.getElementById('btn-liberar-avulso').style.display = 'none';
+  document.getElementById('item-nome').focus();
 }
 
 function abrirModalSenhaDesconto() {
@@ -1205,15 +1233,6 @@ function renderRelatorios() {
     </div>
   `).join('') : '<div class="empty-state">Sem vendas registradas</div>';
 
-  const relUltimas = document.getElementById('relatorio-ultimas');
-  relUltimas.innerHTML = historico.slice(-5).reverse().map(c => `
-    <div class="historico-item">
-      <div class="historico-info">
-        <h4>${c.nome} · Mesa ${c.mesa}</h4>
-        <p>${c.hora} → ${c.horaFechamento} · R$ ${(c.totalFinal ?? c.total).toFixed(2)}</p>
-      </div>
-    </div>
-  `).join('') || '<div class="empty-state">Nenhuma comanda fechada</div>';
 }
 
 // =================== LIMPAR HISTÓRICO ===================
@@ -1235,22 +1254,57 @@ function renderCompras() {
   renderRegistroCompras();
 }
 
-function budgetAlertHtml() {
-  const semanaAnterior = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const totalSemana = compras.filter(c => c.data >= semanaAnterior).reduce((s, c) => s + c.valor, 0);
-  if (totalSemana <= budgetSemanal) return '';
-  return `
-    <div style="background:var(--red-light); border:1px solid #f0c0c0; border-radius:10px; padding:1rem; margin-bottom:1.5rem;">
-      <strong style="color:var(--red);">⚠ Alerta de Budget!</strong>
-      <p style="font-size:12px; margin-top:4px; color:var(--red);">Compras da semana: R$ ${totalSemana.toFixed(2)} / Limite: R$ ${budgetSemanal.toFixed(2)}</p>
-    </div>`;
-}
 
 function switchTab(el, tabName) {
   document.querySelectorAll('#compras-tabs .tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   if (tabName === 'registro') renderRegistroCompras();
+  else if (tabName === 'saida') renderRegistroSaida();
   else if (tabName === 'fornecedores') renderFornecedores();
+}
+
+function renderRegistroSaida() {
+  const container = document.getElementById('compras-content');
+  if (!container) return;
+  const hoje = new Date().toISOString().split('T')[0];
+  container.innerHTML = `
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-title">Registrar saída</div>
+      <div class="form-row">
+        <div class="form-group"><label>Data</label><input type="date" id="saida-data" value="${hoje}"></div>
+        <div class="form-group"><label>Valor (R$)*</label><input type="number" id="saida-valor" placeholder="0,00" step="0.01" min="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Descrição*</label><input type="text" id="saida-desc" placeholder="Ex: Retirada pessoal, conta de luz"></div>
+        <div class="form-group"><label>Categoria</label><select id="saida-cat"><option>Retirada</option><option>Manutenção</option><option>Pessoal</option><option>Outro</option></select></div>
+      </div>
+      <button class="btn btn-gold btn-full" onclick="adicionarSaidaAvulsa()">＋ Registrar saída</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Saídas registradas (últimas 10)</div>
+      <div id="saidas-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+  `;
+  renderListaSaidas();
+}
+
+function renderListaSaidas() {
+  const list = document.getElementById('saidas-list');
+  if (!list) return;
+  const ultimas = [...saidas].sort((a, b) => b.data.localeCompare(a.data)).slice(0, 10);
+  if (!ultimas.length) {
+    list.innerHTML = '<div class="empty-state">Nenhuma saída registrada</div>';
+    return;
+  }
+  list.innerHTML = ultimas.map(s => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:0.75rem; background:var(--cream); border-radius:10px; border:1px solid var(--border-light);">
+      <div>
+        <div style="font-weight:600; font-size:14px;">${s.descricao}</div>
+        <div style="font-size:12px; color:var(--text-muted);">${s.data} · ${s.categoria}</div>
+      </div>
+      <span style="font-family:'DM Mono',monospace; font-weight:700; color:var(--red);">− R$ ${s.valor.toFixed(2)}</span>
+    </div>
+  `).join('');
 }
 
 function renderRegistroCompras() {
@@ -1260,7 +1314,7 @@ function renderRegistroCompras() {
   const hoje = new Date().toISOString().split('T')[0];
 
   container.innerHTML = `
-    ${budgetAlertHtml()}
+
 
     <div class="card" style="margin-bottom:1.5rem;">
       <div class="card-title">Registrar compra</div>
@@ -1388,20 +1442,6 @@ function renderListaCompras() {
   `).join('');
 }
 
-async function atualizarBudget() {
-  const budgetInput = document.getElementById('budget-input');
-  if (!budgetInput) return;
-  const val = parseFloat(budgetInput.value);
-  if (!isNaN(val) && val > 0) {
-    try {
-      await apiFetch('/configuracoes', { method: 'PUT', body: { chave: 'budget_semanal', valor: String(val) } });
-      budgetSemanal = val;
-      showToast('Budget semanal atualizado: R$ ' + val.toFixed(2));
-    } catch (err) {
-      showToast('Erro ao atualizar budget: ' + err.message, 'error');
-    }
-  }
-}
 
 function registrarCompra() {
   const data       = document.getElementById('compra-data').value;
@@ -1530,7 +1570,7 @@ function renderFornecedores() {
   if (!container) return;
 
   container.innerHTML = `
-    ${budgetAlertHtml()}
+
     <div class="card" style="margin-bottom:1.5rem;">
       <div class="card-title">Cadastrar fornecedor</div>
       <div class="form-row">
@@ -1664,37 +1704,51 @@ function renderFinanceiro() {
   const totalEntradasSemana = entradasSemana.reduce((s, c) => s + (c.totalFinal ?? c.total), 0);
 
   const todasSaidas  = [...compras, ...saidas];
-  const saidasMes    = todasSaidas.filter(s => { const d = new Date(s.data); return d.getFullYear() === anoAtual && d.getMonth() === mesAtual; });
-  const saidasSemana = todasSaidas.filter(s => { const d = new Date(s.data); return d >= inicioSemana && d <= fimSemana; });
+  const saidasMes    = todasSaidas.filter(s => { const d = parseLocal(s.data); return d.getFullYear() === anoAtual && d.getMonth() === mesAtual; });
+  const saidasSemana = todasSaidas.filter(s => { const d = parseLocal(s.data); return d >= inicioSemana && d <= fimSemana; });
 
   const totalSaidasMes    = saidasMes.reduce((s, c) => s + c.valor, 0);
   const totalSaidasSemana = saidasSemana.reduce((s, c) => s + c.valor, 0);
   const saldoMes    = totalEntradasMes - totalSaidasMes;
   const saldoSemana = totalEntradasSemana - totalSaidasSemana;
 
-  container.innerHTML = `
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-value">R$ ${totalEntradasMes.toFixed(2)}</div><div class="stat-label">Entradas do mês</div></div>
-      <div class="stat-card"><div class="stat-value">R$ ${totalSaidasMes.toFixed(2)}</div><div class="stat-label">Saídas do mês</div></div>
-      <div class="stat-card"><div class="stat-value" style="color:${saldoMes >= 0 ? 'var(--green)' : 'var(--red)'};">R$ ${saldoMes.toFixed(2)}</div><div class="stat-label">Saldo do mês</div></div>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-value">R$ ${totalEntradasSemana.toFixed(2)}</div><div class="stat-label">Entradas semana</div></div>
-      <div class="stat-card"><div class="stat-value">R$ ${totalSaidasSemana.toFixed(2)}</div><div class="stat-label">Saídas semana</div></div>
-      <div class="stat-card"><div class="stat-value" style="color:${saldoSemana >= 0 ? 'var(--green)' : 'var(--red)'};">R$ ${saldoSemana.toFixed(2)}</div><div class="stat-label">Saldo semana</div></div>
-    </div>
+  const mesLabel    = agora.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  const semanaLabel = `${inicioSemana.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' })} – ${fimSemana.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' })}`;
 
-    <div class="card" style="margin-bottom:1.5rem;">
-      <div class="card-title">Budget de compras semanal</div>
-      <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-        <div style="flex:1; min-width:160px;">
-          <label style="font-size:12px;">Limite semanal (R$)</label>
-          <input type="number" id="budget-input" value="${budgetSemanal}" step="50" min="0" onchange="atualizarBudget()">
+  container.innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title" style="text-transform:capitalize;">${mesLabel}</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px; color:var(--text-muted);">Entradas</span>
+            <span style="font-family:'DM Mono',monospace; font-weight:700; color:var(--green);">+ R$ ${totalEntradasMes.toFixed(2)}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px; color:var(--text-muted);">Saídas</span>
+            <span style="font-family:'DM Mono',monospace; font-weight:700; color:var(--red);">− R$ ${totalSaidasMes.toFixed(2)}</span>
+          </div>
+          <div style="border-top:1px solid var(--border-light); padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px; font-weight:700;">Saldo</span>
+            <span style="font-family:'DM Mono',monospace; font-size:1.1rem; font-weight:700; color:${saldoMes >= 0 ? 'var(--green)' : 'var(--red)'};">${saldoMes >= 0 ? '+' : '−'} R$ ${Math.abs(saldoMes).toFixed(2)}</span>
+          </div>
         </div>
-        <div style="flex:1; min-width:160px; padding:0.75rem; background:var(--cream); border-radius:8px; border:1px solid var(--border-light);">
-          <div style="font-size:11px; color:var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px;">Gasto esta semana</div>
-          <div style="font-family:'DM Mono',monospace; font-size:1.2rem; font-weight:700; color:${totalSaidasSemana > budgetSemanal ? 'var(--red)' : 'var(--green)'};">R$ ${totalSaidasSemana.toFixed(2)}</div>
-          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">de R$ ${budgetSemanal.toFixed(2)}</div>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title">Esta semana <span style="font-size:11px; font-weight:400; color:var(--text-muted);">${semanaLabel}</span></div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px; color:var(--text-muted);">Entradas</span>
+            <span style="font-family:'DM Mono',monospace; font-weight:700; color:var(--green);">+ R$ ${totalEntradasSemana.toFixed(2)}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px; color:var(--text-muted);">Saídas</span>
+            <span style="font-family:'DM Mono',monospace; font-weight:700; color:var(--red);">− R$ ${totalSaidasSemana.toFixed(2)}</span>
+          </div>
+          <div style="border-top:1px solid var(--border-light); padding-top:10px; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:13px; font-weight:700;">Saldo</span>
+            <span style="font-family:'DM Mono',monospace; font-size:1.1rem; font-weight:700; color:${saldoSemana >= 0 ? 'var(--green)' : 'var(--red)'};">${saldoSemana >= 0 ? '+' : '−'} R$ ${Math.abs(saldoSemana).toFixed(2)}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1702,19 +1756,6 @@ function renderFinanceiro() {
     <div class="card" style="margin-bottom:1.5rem;">
       <div class="card-title">Visão semanal detalhada</div>
       <div id="financeiro-semanal" style="display:flex; flex-direction:column; gap:12px;"></div>
-    </div>
-
-    <div class="card" style="margin-bottom:1.5rem;">
-      <div class="card-title">Lançamento manual de saída</div>
-      <div class="form-row">
-        <div class="form-group"><label>Data</label><input type="date" id="saida-data" value="${agora.toISOString().split('T')[0]}"></div>
-        <div class="form-group"><label>Valor (R$)*</label><input type="number" id="saida-valor" placeholder="0,00" step="0.01" min="0"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Descrição*</label><input type="text" id="saida-desc" placeholder="Ex: Retirada pessoal"></div>
-        <div class="form-group"><label>Categoria</label><select id="saida-cat"><option>Retirada</option><option>Manutenção</option><option>Pessoal</option><option>Outro</option></select></div>
-      </div>
-      <button class="btn btn-gold btn-full" onclick="adicionarSaidaAvulsa()">＋ Registrar saída</button>
     </div>
 
     <div class="card">
@@ -1747,15 +1788,13 @@ function renderFinanceiroSemanal() {
   const mapaSemanas = {};
 
   historico.forEach(c => {
-    const d = new Date(c.fechamento || c.data);
-    const semana = getWeekKey(d);
+    const semana = getWeekKey(parseLocal(c.fechamento || c.data));
     if (!mapaSemanas[semana]) mapaSemanas[semana] = { entradas: [], saidas: [] };
     mapaSemanas[semana].entradas.push(c);
   });
 
   [...compras, ...saidas].forEach(s => {
-    const d = new Date(s.data);
-    const semana = getWeekKey(d);
+    const semana = getWeekKey(parseLocal(s.data));
     if (!mapaSemanas[semana]) mapaSemanas[semana] = { entradas: [], saidas: [] };
     mapaSemanas[semana].saidas.push(s);
   });
@@ -1767,37 +1806,72 @@ function renderFinanceiroSemanal() {
     return;
   }
 
+  const DIAS_PT = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
   container.innerHTML = semanas.map(([semanaKey, dados]) => {
     const totalEnt = dados.entradas.reduce((s, c) => s + (c.totalFinal ?? c.total), 0);
     const totalSai = dados.saidas.reduce((s, c) => s + c.valor, 0);
     const saldo    = totalEnt - totalSai;
     const label    = semanaKey.split('|')[1] || semanaKey;
+
+    // Agrupar por dia (chave YYYY-MM-DD)
+    const porDia = {};
+    dados.entradas.forEach(c => {
+      const d = parseLocal(c.fechamento || c.data);
+      const chave = localDateKey(d);
+      if (!porDia[chave]) porDia[chave] = { entradas: [], saidas: [], diaSemana: d.getDay() };
+      porDia[chave].entradas.push(c);
+    });
+    dados.saidas.forEach(s => {
+      const d = parseLocal(s.data);
+      const chave = localDateKey(d);
+      if (!porDia[chave]) porDia[chave] = { entradas: [], saidas: [], diaSemana: d.getDay() };
+      porDia[chave].saidas.push(s);
+    });
+
+    const diasOrdenados = Object.entries(porDia).sort((a, b) => a[0].localeCompare(b[0]));
+
+    const diasHtml = diasOrdenados.map(([dataKey, dia]) => {
+      const dLabel  = parseLocal(dataKey);
+      const dataFmt = dLabel.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      const nomeDia = DIAS_PT[dLabel.getDay()];
+      const entDia  = dia.entradas.reduce((s, c) => s + (c.totalFinal ?? c.total), 0);
+      const saiDia  = dia.saidas.reduce((s, c) => s + c.valor, 0);
+      return `
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:5px; display:flex; justify-content:space-between;">
+            <span>${nomeDia} ${dataFmt}</span>
+            <span style="color:${(entDia - saiDia) >= 0 ? 'var(--green)' : 'var(--red)'};">${(entDia - saiDia) >= 0 ? '+' : '−'} R$ ${Math.abs(entDia - saiDia).toFixed(2)}</span>
+          </div>
+          ${dia.entradas.map(c => `
+            <div style="font-size:12px; padding:5px 8px; margin-bottom:3px; background:var(--cream); border-radius:6px; display:flex; justify-content:space-between;">
+              <span>${c.nome} · Mesa ${c.mesa}</span>
+              <span style="font-weight:600; color:var(--green);">+ R$ ${(c.totalFinal ?? c.total).toFixed(2)}</span>
+            </div>
+          `).join('')}
+          ${dia.saidas.map(s => `
+            <div style="font-size:12px; padding:5px 8px; margin-bottom:3px; background:#fff5f5; border-radius:6px; display:flex; justify-content:space-between;">
+              <span>${s.descricao || s.fornecedor || s.categoria}</span>
+              <span style="font-weight:600; color:var(--red);">− R$ ${s.valor.toFixed(2)}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }).join('');
+
     return `
       <div style="border:1px solid var(--border-light); border-radius:10px; overflow:hidden;">
         <div onclick="toggleSemanaDetalhes(this)" style="display:flex; justify-content:space-between; cursor:pointer; align-items:center; user-select:none; padding:0.875rem 1rem; background:var(--cream);">
           <strong style="font-size:13px;">${label}</strong>
           <div style="display:flex; gap:16px; align-items:center; font-size:13px;">
             <span style="color:var(--green); font-weight:600;">+ R$ ${totalEnt.toFixed(2)}</span>
-            <span style="color:var(--red); font-weight:600;">- R$ ${totalSai.toFixed(2)}</span>
+            <span style="color:var(--red); font-weight:600;">− R$ ${totalSai.toFixed(2)}</span>
             <span style="font-weight:700; color:${saldo >= 0 ? 'var(--green)' : 'var(--red)'};">= R$ ${saldo.toFixed(2)}</span>
             <span style="color:var(--text-muted); font-size:11px;">▼</span>
           </div>
         </div>
         <div style="display:none; padding:1rem; background:white;" class="semana-detalhes">
-          <p style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Entradas (${dados.entradas.length})</p>
-          ${dados.entradas.map(c => `
-            <div style="font-size:12px; padding:5px 8px; margin-bottom:3px; background:var(--cream); border-radius:6px; display:flex; justify-content:space-between;">
-              <span>${c.nome} · Mesa ${c.mesa}</span>
-              <span style="font-weight:600; color:var(--green);">R$ ${(c.totalFinal ?? c.total).toFixed(2)}</span>
-            </div>
-          `).join('')}
-          <p style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; margin:10px 0 6px;">Saídas (${dados.saidas.length})</p>
-          ${dados.saidas.map(s => `
-            <div style="font-size:12px; padding:5px 8px; margin-bottom:3px; background:var(--cream); border-radius:6px; display:flex; justify-content:space-between;">
-              <span>${s.descricao || s.fornecedor || s.categoria}</span>
-              <span style="font-weight:600; color:var(--red);">R$ ${s.valor.toFixed(2)}</span>
-            </div>
-          `).join('')}
+          ${diasHtml || '<div class="empty-state">Sem registros</div>'}
         </div>
       </div>
     `;
@@ -1814,18 +1888,28 @@ function toggleSemanaDetalhes(el) {
   }
 }
 
+function parseLocal(str) {
+  return new Date(/^\d{4}-\d{2}-\d{2}$/.test(String(str)) ? str + 'T12:00:00' : str);
+}
+
+function localDateKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function getWeekKey(date) {
-  const d = new Date(date);
+  const src = typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date + 'T12:00:00' : date;
+  const d = new Date(src);
   if (isNaN(d)) return 'data-invalida|data-invalida';
   const diaSemana = d.getDay();
   const inicio    = new Date(d);
   inicio.setDate(d.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1));
+  inicio.setHours(12, 0, 0, 0);
   const fim = new Date(inicio);
   fim.setDate(inicio.getDate() + 6);
-  const ano     = inicio.getFullYear();
-  const chaveOrdem = inicio.toISOString().split('T')[0];
-  const label   = inicio.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) +
-    ' - ' + fim.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' ' + ano;
+  const ano        = inicio.getFullYear();
+  const chaveOrdem = localDateKey(inicio);
+  const label      = inicio.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) +
+    ' – ' + fim.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) + ' ' + ano;
   return chaveOrdem + '|' + label;
 }
 
@@ -1843,7 +1927,7 @@ async function adicionarSaidaAvulsa() {
     document.getElementById('saida-data').value  = new Date().toISOString().split('T')[0];
     document.getElementById('saida-valor').value = '';
     document.getElementById('saida-desc').value  = '';
-    renderFinanceiro();
+    renderListaSaidas();
     showToast('Saída registrada!');
   } catch (err) {
     showToast('Erro ao registrar saída: ' + err.message, 'error');
@@ -1979,7 +2063,7 @@ function exportarRelatorio() {
   });
 
   [...compras, ...saidas].filter(filtrarSaida).forEach(s => {
-    dados.push({ data: s.data, tipo: 'Saída', descricao: s.descricao || s.fornecedor || '--', fornecedor: s.fornecedor || '--', categoria: s.categoria, valor: s.valor, pagamento: s.pagamento || '--', nf: s.nf || '--' });
+    dados.push({ data: s.data, tipo: 'Saída', descricao: s.descricao || s.fornecedor || '--', fornecedor: s.fornecedor || '--', categoria: s.categoria, valor: -s.valor, pagamento: s.pagamento || '--', nf: s.nf || '--' });
   });
 
   if (!dados.length) return showToast('Nenhum dado para exportar no período', 'error');
@@ -2013,52 +2097,6 @@ function showToast(msg, type = '') {
   setTimeout(() => t.classList.remove('show'), 4000);
 }
 
-// =================== BACKUP E IMPORT ===================
-function exportarBackup() {
-  const backup = {
-    versao: '1.0',
-    data: new Date().toISOString(),
-    comandas, historico, produtos, categorias,
-    compras, fornecedores, saidas, budgetSemanal,
-  };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-  const link = document.createElement('a');
-  link.href  = URL.createObjectURL(blob);
-  link.download = `cafe-leal-backup-${new Date().toISOString().split('T')[0]}.json`;
-  link.click();
-  showToast('Backup exportado!', 'success');
-}
-
-async function importarBackup(fileInput) {
-  const file = fileInput.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = async function (e) {
-    try {
-      const backup = JSON.parse(e.target.result);
-      if (!backup.versao) return showToast('Arquivo de backup inválido', 'error');
-      if (!confirm('Isso irá substituir TODOS os dados atuais. Continuar?')) return;
-
-      try {
-        await apiFetch('/backup/importar', { method: 'POST', body: backup });
-        await carregarDados();
-        renderItems();
-        renderComandas();
-        renderCaixa();
-        updateBadge();
-        showToast('Backup importado com sucesso!', 'success');
-      } catch (err) {
-        showToast('Erro ao importar backup: ' + err.message, 'error');
-      }
-    } catch (err) {
-      showToast('Erro ao ler arquivo de backup', 'error');
-      console.error(err);
-    }
-  };
-  reader.readAsText(file);
-  fileInput.value = '';
-}
 
 // =================== KEYBOARD SHORTCUTS ===================
 function initializeKeyboardShortcuts() {

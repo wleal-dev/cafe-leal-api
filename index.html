@@ -29,10 +29,6 @@
     <button class="login-btn" onclick="fazerLogin()">Entrar</button>
     <div class="login-error" id="login-error"></div>
 
-    <div class="login-hint">
-      Usuários padrão:<br>
-      <strong>admin</strong> / admin123 &nbsp;·&nbsp; <strong>caixa</strong> / caixa123
-    </div>
   </div>
 </div>
 
@@ -53,9 +49,6 @@
         <div style="font-size:10px; color:rgba(201,168,76,0.55);">Cargo: <span id="user-role">----</span></div>
       </div>
       <div class="header-actions">
-        <button class="btn-logout" onclick="exportarBackup()" title="Backup">💾</button>
-        <input type="file" id="import-backup" style="display:none;" onchange="importarBackup(this)">
-        <button class="btn-logout" onclick="document.getElementById('import-backup').click()" title="Importar">📂</button>
         <button class="btn-logout" onclick="fazerLogout()">Sair</button>
       </div>
     </div>
@@ -68,7 +61,6 @@
     <div class="tab" id="tab-compras" onclick="showPage('compras', this)" style="display:none;">Compras</div>
     <div class="tab" id="tab-financeiro" onclick="showPage('financeiro', this)" style="display:none;">Financeiro</div>
     <div class="tab" onclick="showPage('caixa', this)">Caixa do dia</div>
-    <div class="tab" onclick="showPage('relatorios', this)">Relatórios</div>
   </nav>
 
   <!-- NOVA COMANDA -->
@@ -85,13 +77,16 @@
         </div>
         <div class="card">
           <div class="card-title">Adicionar itens</div>
-          <div class="add-item-grid">
-            <div><label>Item</label><input type="text" id="item-nome" placeholder="Ex: Cappuccino" autocomplete="off" onkeypress="handleEnterEmItem(event)"></div>
-            <div><label>Qtd</label><input type="number" id="item-qty" value="1" min="1"></div>
-            <div><label>R$</label><input type="number" id="item-preco" placeholder="0,00" step="0.01" min="0" onkeypress="handleEnterEmItem(event)"></div>
-            <div><label style="opacity:0;">x</label><button class="btn btn-add" onclick="addItem()" style="height:38px;">＋</button></div>
-            <div style="grid-column:1 / -1;"><label>Observações</label><input type="text" id="item-nota" placeholder="Ex: Sem açúcar, leite de aveia" onkeypress="handleEnterEmNota(event)"></div>
+          <div id="form-item-avulso" style="display:none;">
+            <div class="add-item-grid">
+              <div><label>Item</label><input type="text" id="item-nome" placeholder="Ex: Cappuccino" autocomplete="off" onkeypress="handleEnterEmItem(event)"></div>
+              <div><label>Qtd</label><input type="number" id="item-qty" value="1" min="1"></div>
+              <div><label>R$</label><input type="number" id="item-preco" placeholder="0,00" step="0.01" min="0" onkeypress="handleEnterEmItem(event)"></div>
+              <div><label style="opacity:0;">x</label><button class="btn btn-add" onclick="addItem()" style="height:38px;">＋</button></div>
+              <div style="grid-column:1 / -1;"><label>Observações</label><input type="text" id="item-nota" placeholder="Ex: Sem açúcar, leite de aveia" onkeypress="handleEnterEmNota(event)"></div>
+            </div>
           </div>
+          <button id="btn-liberar-avulso" class="btn btn-ghost btn-full" onclick="abrirModalSenhaAvulso()" style="margin-bottom:0.5rem; font-size:13px; color:var(--text-muted);">🔒 Item avulso (requer senha da gerente)</button>
           <div class="items-list" id="items-list"><div class="empty-state">Nenhum item adicionado</div></div>
           <div class="total-bar"><span class="total-label">Total</span><span class="total-value" id="total-display">R$ 0,00</span></div>
           <button class="btn btn-gold btn-full" onclick="abrirComanda()" style="padding:0.7rem; font-size:14px;">✓ Abrir comanda</button>
@@ -128,6 +123,19 @@
       <div class="stat-card"><div class="stat-value" id="stat-total">R$ 0</div><div class="stat-label">Total do dia</div></div>
       <div class="stat-card"><div class="stat-value" id="stat-fechadas">0</div><div class="stat-label">Fechadas</div></div>
       <div class="stat-card"><div class="stat-value" id="stat-abertas">0</div><div class="stat-label">Em aberto</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-pico">--</div><div class="stat-label">Hora de pico</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-top-produto">--</div><div class="stat-label">Produto estrela</div></div>
+      <div class="stat-card"><div class="stat-value" id="stat-media-tempo">--</div><div class="stat-label">Tempo médio</div></div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem;">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title">Movimentação por hora</div>
+        <div id="relatorio-pico" style="display:grid; gap:10px;"></div>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title">Ranking de vendas</div>
+        <div id="relatorio-ranking"></div>
+      </div>
     </div>
     <div class="card">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
@@ -138,26 +146,8 @@
     </div>
   </div>
 
-  <!-- RELATÓRIOS -->
-  <div class="page" id="page-relatorios">
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-value" id="stat-pico">--</div><div class="stat-label">Hora de pico</div></div>
-      <div class="stat-card"><div class="stat-value" id="stat-top-produto">--</div><div class="stat-label">Produto estrela</div></div>
-      <div class="stat-card"><div class="stat-value" id="stat-media-tempo">--</div><div class="stat-label">Tempo médio de permanência</div></div>
-    </div>
-    <div class="card" style="margin-bottom:1.5rem;">
-      <div class="card-title">Movimentação por hora</div>
-      <div id="relatorio-pico" style="display:grid; gap:10px;"></div>
-    </div>
-    <div class="card" style="margin-bottom:1.5rem;">
-      <div class="card-title">Ranking de vendas</div>
-      <div id="relatorio-ranking"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">Últimas comandas fechadas</div>
-      <div id="relatorio-ultimas"></div>
-    </div>
-  </div>
+  <!-- page-relatorios mantida vazia para não quebrar referências JS -->
+  <div class="page" id="page-relatorios" style="display:none;"></div>
 
   <!-- PRODUTOS -->
   <div class="page" id="page-produtos">
@@ -176,6 +166,7 @@
     <div style="margin-bottom:1rem;">
       <div id="compras-tabs" class="compras-tab">
         <button class="tab active" onclick="switchTab(this, 'registro')">Registrar Compra</button>
+        <button class="tab" onclick="switchTab(this, 'saida')">Registrar Saída</button>
         <button class="tab" onclick="switchTab(this, 'fornecedores')">Fornecedores</button>
       </div>
     </div>
@@ -275,10 +266,11 @@
 
 <div class="modal-overlay" id="modal-editar-item">
   <div class="modal" style="max-width:500px;">
-    <div class="modal-header"><h3>Editar item</h3><p>Atualize quantidade, preço ou observação</p></div>
+    <div class="modal-header"><h3>Editar item</h3><p>Atualize a quantidade ou observação</p></div>
     <div class="modal-body">
-      <div class="form-group"><label>Item</label><input type="text" id="edit-item-nome"></div>
-      <div class="form-row"><div class="form-group"><label>Qtd</label><input type="number" id="edit-item-qty" min="1"></div><div class="form-group"><label>R$</label><input type="number" id="edit-item-preco" step="0.01" min="0"></div></div>
+      <div class="form-group"><label>Item</label><input type="text" id="edit-item-nome" readonly style="background:var(--cream); color:var(--text-muted); cursor:not-allowed;"></div>
+      <div class="form-row"><div class="form-group"><label>Qtd</label><input type="number" id="edit-item-qty" min="1"></div><div class="form-group"><label>R$ (por unidade)</label><input type="number" id="edit-item-preco" step="0.01" min="0" readonly style="background:var(--cream); color:var(--text-muted); cursor:not-allowed;"></div></div>
+      <div class="form-group"><label>Total</label><input type="text" id="edit-item-total" readonly style="background:var(--cream); color:var(--text-muted); cursor:not-allowed; font-weight:600;"></div>
       <div class="form-group"><label>Observações</label><input type="text" id="edit-item-nota" placeholder="Ex: Sem açúcar, leite de aveia"></div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="fecharEdicaoItem()">Cancelar</button>
@@ -307,6 +299,22 @@
 </div>
 
 <!-- MODAL SENHA DESCONTO -->
+<div class="modal-overlay" id="modal-senha-avulso">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header"><h3>Item avulso</h3><p>Digite a senha da gerente para liberar</p></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Senha da Gerente</label>
+        <input type="password" id="senha-gerente-avulso" placeholder="Digite a senha" autocomplete="off" onkeypress="if(event.key==='Enter') confirmarSenhaAvulso()">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="fecharModalSenhaAvulso()">Cancelar</button>
+        <button class="btn btn-gold" onclick="confirmarSenhaAvulso()">✓ Liberar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-senha-desconto">
   <div class="modal" style="max-width:380px;">
     <div class="modal-header"><h3>Aplicar Desconto</h3><p>Digite a senha do gerente</p></div>

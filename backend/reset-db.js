@@ -29,9 +29,14 @@ async function reset() {
     console.log('OK');
 
     console.log('Criando usuários padrão...');
+    const senhaAdmin = process.env.SENHA_ADMIN;
+    const senhaCaixa = process.env.SENHA_CAIXA;
+    if (!senhaAdmin || !senhaCaixa) {
+      throw new Error('Defina SENHA_ADMIN e SENHA_CAIXA no arquivo .env antes de rodar o reset');
+    }
     const usuarios = [
-      { username: 'admin', senha: 'admin123', nome: 'Administrador', role: 'Gerente' },
-      { username: 'caixa', senha: 'caixa123', nome: 'Caixa',         role: 'Atendente' },
+      { username: 'admin', senha: senhaAdmin, nome: 'Administrador', role: 'Gerente' },
+      { username: 'caixa', senha: senhaCaixa, nome: 'Caixa',         role: 'Atendente' },
     ];
     for (const u of usuarios) {
       const hash = await bcrypt.hash(u.senha, 10);
@@ -44,8 +49,8 @@ async function reset() {
     console.log('OK');
 
     console.log('\n✓ Banco resetado com sucesso!');
-    console.log('  Login: admin / admin123  (Gerente)');
-    console.log('  Login: caixa / caixa123  (Atendente)');
+    console.log('  Login: admin  (Gerente)');
+    console.log('  Login: caixa  (Atendente)');
   } catch (err) {
     console.error('Erro:', err.message);
     process.exit(1);
