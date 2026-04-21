@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS historico (
   forma_pagamento     VARCHAR(20) CHECK (
                         forma_pagamento IN ('Dinheiro','Débito','Crédito','Pix','Cancelada')
                       ),
+  operador_fechamento VARCHAR(100),
   criado_em           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

@@ -1028,6 +1028,13 @@ function verificarDesconto() {
 }
 
 function abrirModalSenhaAvulso() {
+  if (isGerente()) {
+    avulsoLiberado = true;
+    document.getElementById('form-item-avulso').style.display = 'block';
+    document.getElementById('btn-liberar-avulso').style.display = 'none';
+    document.getElementById('item-nome').focus();
+    return;
+  }
   document.getElementById('modal-senha-avulso').classList.add('open');
   document.getElementById('senha-gerente-avulso').value = '';
   setTimeout(() => document.getElementById('senha-gerente-avulso').focus(), 100);
@@ -1052,6 +1059,10 @@ async function confirmarSenhaAvulso() {
 }
 
 function abrirModalSenhaDesconto() {
+  if (isGerente()) {
+    _aplicarDesconto();
+    return;
+  }
   document.getElementById('modal-senha-desconto').classList.add('open');
   document.getElementById('senha-gerente-desconto').value = '';
   document.getElementById('senha-gerente-desconto').focus();
@@ -1059,6 +1070,34 @@ function abrirModalSenhaDesconto() {
 
 function fecharModalSenhaDesconto() {
   document.getElementById('modal-senha-desconto').classList.remove('open');
+}
+
+function _aplicarDesconto() {
+  if (!comandaParaFechar) return;
+  const input      = document.getElementById('desc-input');
+  const valor      = parseFloat(input.value) || 0;
+  if (valor <= 0) return showToast('Digite um valor de desconto', 'error');
+
+  const totalComanda = comandaParaFechar.total;
+  let descAplicado = 0;
+
+  if (tipoDesconto === 'percent') {
+    if (valor > 100) return showToast('Desconto máximo é 100%', 'error');
+    descAplicado = (totalComanda * valor) / 100;
+  } else {
+    if (valor > totalComanda) return showToast('Desconto não pode exceder o total', 'error');
+    descAplicado = valor;
+  }
+
+  const totalFinal = Math.max(0, totalComanda - descAplicado);
+  document.getElementById('desconto-aplicado').textContent = 'R$ ' + descAplicado.toFixed(2);
+  document.getElementById('desc-subtotal').textContent     = 'R$ ' + totalComanda.toFixed(2);
+  document.getElementById('desc-total-final').textContent  = 'R$ ' + totalFinal.toFixed(2);
+  document.getElementById('modal-total').textContent       = 'R$ ' + totalFinal.toFixed(2);
+
+  input.value = '';
+  verificarDesconto();
+  showToast('Desconto de R$ ' + descAplicado.toFixed(2) + ' aplicado', 'success');
 }
 
 async function confirmarDescontoComSenha() {
@@ -1076,26 +1115,8 @@ async function confirmarDescontoComSenha() {
     return showToast('Senha do gerente incorreta', 'error');
   }
 
-  const totalComanda = comandaParaFechar.total;
-  let descAplicado = 0;
-
-  if (tipoDesconto === 'percent') {
-    if (valor > 100) return showToast('Desconto máximo é 100%', 'error');
-    descAplicado = (totalComanda * valor) / 100;
-  } else {
-    if (valor > totalComanda) return showToast('Desconto não pode exceder o total', 'error');
-    descAplicado = valor;
-  }
-
-  const totalFinal = Math.max(0, totalComanda - descAplicado);
-  document.getElementById('desconto-aplicado').textContent = 'R$ ' + descAplicado.toFixed(2);
-  document.getElementById('desc-subtotal').textContent     = 'R$ ' + totalComanda.toFixed(2);
-  document.getElementById('desc-total-final').textContent  = 'R$ ' + totalFinal.toFixed(2);
-
-  input.value = '';
-  verificarDesconto();
   fecharModalSenhaDesconto();
-  showToast('Desconto de R$ ' + descAplicado.toFixed(2) + ' aplicado', 'success');
+  _aplicarDesconto();
 }
 
 let formaPagamentoSelecionada = '';
@@ -1125,10 +1146,11 @@ async function confirmarFechamento() {
 
   const totalFinal = Math.max(0, comandaParaFechar.total - descAplicado);
 
+  const operadorFechamento = currentUser ? currentUser.nome : '';
   try {
     await apiFetch('/comandas/' + comandaParaFechar.id + '/fechar', {
       method: 'POST',
-      body: { desconto: descAplicado, descontoPercentual: descPercentual, totalFinal, formaPagamento },
+      body: { desconto: descAplicado, descontoPercentual: descPercentual, totalFinal, formaPagamento, operadorFechamento },
     });
 
     const agora = new Date();
@@ -1142,6 +1164,7 @@ async function confirmarFechamento() {
       descontoPercentual: descPercentual,
       totalFinal,
       formaPagamento,
+      operadorFechamento,
     };
     historico.push(registro);
     comandas = comandas.filter(c => c.id !== comandaParaFechar.id);
@@ -1163,6 +1186,12 @@ let comandaCancelamento = null;
 function abrirConfirmacaoCancelamento(id) {
   comandaCancelamento = id;
   document.getElementById('motivo-cancelamento').value = '';
+  const senhaField = document.getElementById('cancelamento-senha-field');
+  if (senhaField) {
+    senhaField.style.display = isGerente() ? 'none' : 'block';
+    const senhaInput = document.getElementById('senha-cancelamento');
+    if (senhaInput) senhaInput.value = '';
+  }
   document.getElementById('modal-confirmar').classList.add('open');
 }
 
@@ -1176,8 +1205,21 @@ async function confirmarCancelamento() {
   const comanda = comandas.find(c => c.id === comandaCancelamento);
   if (!comanda) return;
 
+  if (!isGerente()) {
+    const senha = document.getElementById('senha-cancelamento')?.value || '';
+    try {
+      await apiFetch('/auth/verificar-senha', { method: 'POST', body: { pass: senha } });
+    } catch {
+      return showToast('Senha do gerente incorreta', 'error');
+    }
+  }
+
+  const operadorFechamento = currentUser ? currentUser.nome : '';
   try {
-    await apiFetch('/comandas/' + comandaCancelamento + '/cancelar', { method: 'POST' });
+    await apiFetch('/comandas/' + comandaCancelamento + '/cancelar', {
+      method: 'POST',
+      body: { operadorFechamento },
+    });
 
     const agora = new Date();
     const cancelRecord = {
@@ -1190,6 +1232,7 @@ async function confirmarCancelamento() {
       dataFechamento: agora.toLocaleDateString('pt-BR'),
       fechamento: agora.toISOString(),
       formaPagamento: 'Cancelada',
+      operadorFechamento,
     };
     historico.push(cancelRecord);
     comandas = comandas.filter(c => c.id !== comandaCancelamento);
@@ -1215,6 +1258,23 @@ function renderCaixa() {
   document.getElementById('stat-fechadas').textContent = historico.length;
   document.getElementById('stat-abertas').textContent  = comandas.filter(c => c.status === 'aberta').length;
 
+  // F6 — breakdown por forma de pagamento
+  const porPagamento = {};
+  historico.filter(c => c.status === 'fechada').forEach(c => {
+    const p = c.formaPagamento || 'Outros';
+    porPagamento[p] = (porPagamento[p] || 0) + (c.totalFinal ?? c.total);
+  });
+  const breakdownEl = document.getElementById('breakdown-pagamentos');
+  if (breakdownEl) {
+    breakdownEl.innerHTML = Object.keys(porPagamento).length
+      ? Object.entries(porPagamento).map(([p, v]) =>
+          `<div style="display:flex; justify-content:space-between; font-size:13px; padding:6px 0; border-bottom:1px solid var(--border);">
+            <span>${p}</span><strong>R$ ${v.toFixed(2)}</strong>
+          </div>`
+        ).join('')
+      : '<span style="font-size:13px; color:var(--text-muted);">Nenhuma venda ainda</span>';
+  }
+
   const list = document.getElementById('historico-list');
   if (!historico.length) {
     list.innerHTML = '<div class="empty-state">Nenhuma comanda fechada hoje</div>';
@@ -1230,13 +1290,24 @@ function renderCaixa() {
     const pagBadge = c.formaPagamento
       ? `<span style="font-size:10px; background:var(--cream-dark); color:var(--text-mid); padding:2px 6px; border-radius:10px;">${c.formaPagamento}</span>`
       : '';
+    // F5 — itens da comanda
+    const itensHtml = c.itens && c.itens.length
+      ? `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">${c.itens.map(i =>
+          `<span style="font-size:10px; background:var(--cream); color:var(--text-mid); padding:2px 6px; border-radius:4px;">${i.nome} ×${i.qty}</span>`
+        ).join('')}</div>`
+      : '';
+    // F7 — quem abriu e quem fechou
+    const operadores = `Aberto: ${c.operador || '?'} · Fechado: ${c.operadorFechamento || '?'}`;
     return `
-      <div class="historico-item">
-        <div class="historico-info">
-          <h4>${c.nome} · Mesa ${c.mesa} ${descBadge}</h4>
-          <p>${c.hora || '--'} → ${c.horaFechamento || '--'} · ${c.itens.length} item${c.itens.length > 1 ? 's' : ''} · ${c.operador || ''} ${pagBadge}</p>
+      <div class="historico-item" style="flex-direction:column; align-items:flex-start;">
+        <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start;">
+          <div class="historico-info">
+            <h4>${c.nome} · Mesa ${c.mesa} ${descBadge}</h4>
+            <p>${c.hora || '--'} → ${c.horaFechamento || '--'} · ${c.itens.length} item${c.itens.length > 1 ? 's' : ''} · ${operadores} ${pagBadge}</p>
+          </div>
+          <span class="historico-valor">+ R$ ${valorExibido}</span>
         </div>
-        <span class="historico-valor">+ R$ ${valorExibido}</span>
+        ${itensHtml}
       </div>
     `;
   }).join('');

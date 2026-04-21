@@ -847,6 +847,13 @@ input:focus, select:focus {
 
 .divider { height: 1px; background: var(--border-light); margin: 1rem 0; }
 
+.total-final-destaque {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
 /* MODAL */
 .modal-overlay {
   display: none; position: fixed; inset: 0;

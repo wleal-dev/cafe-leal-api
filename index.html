@@ -139,6 +139,10 @@
         <div id="relatorio-ranking"></div>
       </div>
     </div>
+    <div class="card" style="margin-bottom:1.5rem;">
+      <div class="card-title">Por forma de pagamento</div>
+      <div id="breakdown-pagamentos"><span style="font-size:13px; color:var(--text-muted);">Nenhuma venda ainda</span></div>
+    </div>
     <div class="card">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
         <div class="card-title" style="margin-bottom:0;">Histórico de hoje</div>
@@ -217,7 +221,7 @@
         </div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:0.75rem; padding-top:0.75rem; border-top:1px solid var(--border);">
           <div style="font-size:12px;">Subtotal: <span id="desc-subtotal">R$ 0,00</span></div>
-          <div style="font-size:12px;">Total final: <span id="desc-total-final">R$ 0,00</span></div>
+          <div>Total final: <span id="desc-total-final" class="total-final-destaque">R$ 0,00</span></div>
         </div>
       </div>
 
@@ -291,6 +295,10 @@
       <div class="form-group">
         <label>Motivo do cancelamento (opcional)</label>
         <input type="text" id="motivo-cancelamento" placeholder="Ex: Cliente desistiu, erro no pedido...">
+      </div>
+      <div class="form-group" id="cancelamento-senha-field">
+        <label>Senha do gerente</label>
+        <input type="password" id="senha-cancelamento" placeholder="Digite a senha do gerente">
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="fecharConfirmacaoCancelamento()">Manter</button>

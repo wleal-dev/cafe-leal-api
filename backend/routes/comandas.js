@@ -180,7 +180,7 @@ router.post('/:id/fechar', async (req, res) => {
     const comanda = await fetchComanda(req.params.id, client);
     if (!comanda) return res.status(404).json({ error: 'Comanda não encontrada' });
 
-    const { desconto = 0, descontoPercentual = 0, totalFinal, formaPagamento } = req.body;
+    const { desconto = 0, descontoPercentual = 0, totalFinal, formaPagamento, operadorFechamento = '' } = req.body;
     if (!formaPagamento) return res.status(400).json({ error: 'Forma de pagamento obrigatória' });
 
     const agora = new Date();
@@ -192,8 +192,8 @@ router.post('/:id/fechar', async (req, res) => {
       `INSERT INTO historico
          (nome, mesa, total, hora, data, abertura, operador, status,
           hora_fechamento, data_fechamento, fechamento,
-          desconto, desconto_percentual, total_final, forma_pagamento)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,'fechada',$8,$9,$10,$11,$12,$13,$14)
+          desconto, desconto_percentual, total_final, forma_pagamento, operador_fechamento)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'fechada',$8,$9,$10,$11,$12,$13,$14,$15)
        RETURNING id`,
       [
         comanda.nome, comanda.mesa, comanda.total,
@@ -201,7 +201,7 @@ router.post('/:id/fechar', async (req, res) => {
         horaFechamento, dataFechamento, agora.toISOString(),
         desconto, descontoPercentual,
         totalFinal != null ? totalFinal : comanda.total,
-        formaPagamento,
+        formaPagamento, operadorFechamento,
       ]
     );
     const historicoId = histRows[0].id;
@@ -238,6 +238,7 @@ router.post('/:id/cancelar', async (req, res) => {
     const comanda = await fetchComanda(req.params.id, client);
     if (!comanda) return res.status(404).json({ error: 'Comanda não encontrada' });
 
+    const { operadorFechamento = '' } = req.body || {};
     const agora = new Date();
     const horaFechamento = agora.toTimeString().slice(0, 5);
     const dataFechamento = agora.toLocaleDateString('pt-BR');
@@ -246,14 +247,14 @@ router.post('/:id/cancelar', async (req, res) => {
       `INSERT INTO historico
          (nome, mesa, total, hora, data, abertura, operador, status,
           hora_fechamento, data_fechamento, fechamento,
-          desconto, desconto_percentual, total_final, forma_pagamento)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,'cancelada',$8,$9,$10,0,0,$11,'Cancelada')
+          desconto, desconto_percentual, total_final, forma_pagamento, operador_fechamento)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'cancelada',$8,$9,$10,0,0,$11,'Cancelada',$12)
        RETURNING id`,
       [
         comanda.nome, comanda.mesa, comanda.total,
         comanda.hora, comanda.data, comanda.abertura, comanda.operador,
         horaFechamento, dataFechamento, agora.toISOString(),
-        comanda.total,
+        comanda.total, operadorFechamento,
       ]
     );
     const historicoId = histRows[0].id;
