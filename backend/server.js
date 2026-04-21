@@ -1,6 +1,7 @@
 require('dotenv').config({ path: __dirname + '/.env' });
 
 const express = require('express');
+const helmet  = require('helmet');
 const path    = require('path');
 
 const auth           = require('./middleware/auth');
@@ -17,6 +18,8 @@ const rotasBackup        = require('./routes/backup');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(helmet());
 
 // Body parser — limite 10mb para suportar foto base64 em compras
 app.use(express.json({ limit: '10mb' }));

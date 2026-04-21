@@ -1,5 +1,6 @@
-const router = require('express').Router();
-const db     = require('../db');
+const router    = require('express').Router();
+const db        = require('../db');
+const checkRole = require('../middleware/checkRole');
 
 // GET /api/produtos
 router.get('/', async (req, res) => {
@@ -18,7 +19,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/produtos
-router.post('/', async (req, res) => {
+router.post('/', checkRole('Gerente'), async (req, res) => {
   try {
     const { nome, preco, categoriaId } = req.body;
     if (!nome || preco == null) {
@@ -38,7 +39,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/produtos/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', checkRole('Gerente'), async (req, res) => {
   try {
     const { nome, preco, categoriaId } = req.body;
     if (!nome || preco == null) {
@@ -60,7 +61,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/produtos/:id  (soft delete)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', checkRole('Gerente'), async (req, res) => {
   try {
     await db.query('UPDATE produtos SET ativo = FALSE WHERE id = $1', [req.params.id]);
     res.json({ ok: true });

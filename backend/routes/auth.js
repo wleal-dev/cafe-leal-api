@@ -1,11 +1,28 @@
-const router  = require('express').Router();
-const bcrypt  = require('bcrypt');
-const jwt     = require('jsonwebtoken');
-const db      = require('../db');
-const auth    = require('../middleware/auth');
+const router    = require('express').Router();
+const bcrypt    = require('bcrypt');
+const jwt       = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
+const db        = require('../db');
+const auth      = require('../middleware/auth');
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Muitas tentativas. Tente novamente em 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const senhaGerenteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Muitas tentativas. Tente novamente em 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // POST /api/auth/login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { user, pass } = req.body;
     if (!user || !pass) {
@@ -50,7 +67,7 @@ router.get('/me', auth, (req, res) => {
 });
 
 // POST /api/auth/verificar-senha  (confirmar senha do gerente para desconto)
-router.post('/verificar-senha', auth, async (req, res) => {
+router.post('/verificar-senha', auth, senhaGerenteLimiter, async (req, res) => {
   try {
     const { pass } = req.body;
     if (!pass) return res.status(400).json({ error: 'Senha obrigatória' });

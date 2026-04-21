@@ -1,9 +1,10 @@
-const router = require('express').Router();
-const db     = require('../db');
+const router    = require('express').Router();
+const db        = require('../db');
+const checkRole = require('../middleware/checkRole');
 
 // POST /api/backup/importar
 // Body: JSON com { comandas, historico, produtos, categorias, compras, fornecedores, saidas, budgetSemanal }
-router.post('/importar', async (req, res) => {
+router.post('/importar', checkRole('Gerente'), async (req, res) => {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
