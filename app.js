@@ -807,7 +807,7 @@ async function confirmarSplit() {
           body: {
             nome: `${comandaParaFechar.nome} (${i}/${people})`,
             mesa: comandaParaFechar.mesa,
-            itens: comandaParaFechar.itens.map(item => ({ ...item, qty: item.qty / people })),
+            itens: comandaParaFechar.itens,
             total: share,
             hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
             data: new Date().toLocaleDateString('pt-BR'),
