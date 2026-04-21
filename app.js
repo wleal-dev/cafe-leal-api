@@ -2043,7 +2043,7 @@ function carregarSemanasDoAno(ano) {
     const domingo = new Date(current);
     domingo.setDate(domingo.getDate() + 6);
     const label = `${numSemana}ª sem (${segunda.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})} - ${domingo.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})})`;
-    semanas.push({ num: numSemana, label, segunda: segunda.toISOString().split('T')[0] });
+    semanas.push({ num: numSemana, label, segunda: localDateKey(segunda) });
     current.setDate(current.getDate() + 7);
     numSemana++;
   }
