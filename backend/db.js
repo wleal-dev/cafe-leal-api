@@ -1,5 +1,9 @@
 require('dotenv').config({ path: __dirname + '/.env' });
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
+
+// PostgreSQL retorna NUMERIC como string por padrão.
+// OID 1700 = NUMERIC — converter para float em toda a aplicação.
+types.setTypeParser(1700, (val) => parseFloat(val));
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
