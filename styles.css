@@ -89,14 +89,13 @@ html, body {
 
 /* ============= LOGIN ============= */
 .login-screen {
-  display: none;
+  display: flex;
   position: fixed; inset: 0;
   background: var(--sidebar-bg);
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
-.login-screen[style*="flex"] { display: flex; }
 
 .login-card {
   background: var(--card-bg);
