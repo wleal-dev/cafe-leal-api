@@ -1383,11 +1383,6 @@ function renderRegistroCompras() {
       </div>
       <div class="form-group"><label>Categoria</label><select id="compra-categoria"><option>Insumos</option><option>Contas Fixas</option><option>Fornecedores</option><option>Retirada de Caixa</option><option>Outros</option></select></div>
       <div class="form-group"><label>Itens comprados <span style="font-weight:400; color:var(--text-muted);">(opcional)</span></label><input type="text" id="compra-itens" placeholder="Ex: 5kg café, 10L leite — ajuda no controle de estoque futuro"></div>
-      <div class="form-group">
-        <label>Foto da NF <span style="font-weight:400; color:var(--text-muted);">(opcional)</span></label>
-        <input type="file" id="compra-foto" accept="image/*">
-        <span style="font-size:11px; color:var(--text-muted);">⚠ Fotos ocupam espaço. Prefira fotos compactas.</span>
-      </div>
       <div class="form-group"><label>Observações <span style="font-weight:400; color:var(--text-muted);">(opcional)</span></label><input type="text" id="compra-obs" placeholder="Opcional"></div>
       <button class="btn btn-gold btn-full" onclick="registrarCompra()">✓ Registrar compra</button>
     </div>
@@ -1489,27 +1484,14 @@ function registrarCompra() {
   if (!fornecedor) return showToast('Informe o fornecedor', 'error');
   if (isNaN(valor) || valor <= 0) return showToast('Digite um valor válido', 'error');
 
-  const fileInput = document.getElementById('compra-foto');
-  if (fileInput.files.length > 0) {
-    if (fileInput.files[0].size > 1 * 1024 * 1024) {
-      showToast('Foto muito grande (máx 1MB). Use uma versão compacta.', 'error');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = function () {
-      salvarCompra(data, fornecedor, cnpj, nf, valor, pagamento, status, categoria, itens, obs, reader.result);
-    };
-    reader.readAsDataURL(fileInput.files[0]);
-  } else {
-    salvarCompra(data, fornecedor, cnpj, nf, valor, pagamento, status, categoria, itens, obs, '');
-  }
+  salvarCompra(data, fornecedor, cnpj, nf, valor, pagamento, status, categoria, itens, obs);
 }
 
-async function salvarCompra(data, fornecedor, cnpj, nf, valor, pagamento, status, categoria, itens, obs, foto) {
+async function salvarCompra(data, fornecedor, cnpj, nf, valor, pagamento, status, categoria, itens, obs) {
   try {
     const nova = await apiFetch('/compras', {
       method: 'POST',
-      body: { data, fornecedor, cnpj, nf, valor, pagamento, status, categoria, itens, obs, foto },
+      body: { data, fornecedor, cnpj, nf, valor, pagamento, status, categoria, itens, obs },
     });
     compras.push(nova);
 
@@ -1524,7 +1506,6 @@ async function salvarCompra(data, fornecedor, cnpj, nf, valor, pagamento, status
     document.getElementById('compra-categoria').value = 'Insumos';
     document.getElementById('compra-itens').value    = '';
     document.getElementById('compra-obs').value      = '';
-    document.getElementById('compra-foto').value     = '';
 
     renderListaCompras();
     showToast('Compra registrada!', 'success');
