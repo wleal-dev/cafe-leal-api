@@ -27,6 +27,30 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ===================== LOADING BAR ===================== */
+#loading-bar {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  width: 0;
+  background: var(--gold);
+  z-index: 10000;
+  border-radius: 0 2px 2px 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: width 0.4s ease, opacity 0.2s ease;
+}
+#loading-bar.loading {
+  opacity: 1;
+  width: 75%;
+  transition: width 3s cubic-bezier(0.05, 0.6, 0.4, 1), opacity 0.1s;
+}
+#loading-bar.done {
+  width: 100% !important;
+  opacity: 0;
+  transition: width 0.15s ease, opacity 0.3s ease 0.1s;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
   background: var(--cream);

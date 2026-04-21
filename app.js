@@ -1,27 +1,52 @@
 // =================== API HELPER ===================
 const API_BASE = '/api';
 
+let _reqCount = 0;
+function _loadingStart() {
+  _reqCount++;
+  const bar = document.getElementById('loading-bar');
+  if (!bar) return;
+  bar.classList.remove('done');
+  bar.style.width = '0';
+  void bar.offsetWidth;
+  bar.classList.add('loading');
+}
+function _loadingEnd() {
+  _reqCount = Math.max(0, _reqCount - 1);
+  if (_reqCount > 0) return;
+  const bar = document.getElementById('loading-bar');
+  if (!bar) return;
+  bar.classList.remove('loading');
+  bar.classList.add('done');
+  setTimeout(() => { bar.classList.remove('done'); bar.style.width = '0'; }, 450);
+}
+
 async function apiFetch(url, options = {}) {
   const token = localStorage.getItem('cl_token');
-  const res = await fetch(API_BASE + url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
-      ...(options.headers || {}),
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  _loadingStart();
+  try {
+    const res = await fetch(API_BASE + url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+        ...(options.headers || {}),
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+    });
 
-  if (res.status === 401) {
-    fazerLogout();
-    return null;
+    if (res.status === 401) {
+      fazerLogout();
+      return null;
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Erro na requisição');
+    }
+    return res.json();
+  } finally {
+    _loadingEnd();
   }
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Erro na requisição');
-  }
-  return res.json();
 }
 
 // =================== STATE ===================
@@ -541,6 +566,9 @@ async function abrirComanda() {
   const total = itensComanda.reduce((s, i) => s + i.preco * i.qty, 0);
   const agora = new Date();
 
+  const btnAbrir = document.querySelector('button[onclick="abrirComanda()"]');
+  if (btnAbrir) { btnAbrir.disabled = true; btnAbrir.textContent = 'Abrindo…'; }
+
   try {
     const novaComanda = await apiFetch('/comandas', {
       method: 'POST',
@@ -566,6 +594,8 @@ async function abrirComanda() {
     showToast('✓ Comanda aberta — ' + nome + ' · Mesa ' + mesa, 'success');
   } catch (err) {
     showToast('Erro ao abrir comanda: ' + err.message, 'error');
+  } finally {
+    if (btnAbrir) { btnAbrir.disabled = false; btnAbrir.textContent = '✓ Abrir comanda'; }
   }
 }
 
