@@ -2085,15 +2085,17 @@ function obterParametros() {
     const semanaVal  = document.getElementById('semana-selecionar').value;
     const [numSemana, segundaStr] = semanaVal.split('|');
     const ano        = document.getElementById('semana-ano').value;
-    dataInicio       = new Date(segundaStr);
+    dataInicio       = parseLocal(segundaStr);
+    dataInicio.setHours(0, 0, 0, 0);
     dataFim          = new Date(dataInicio);
     dataFim.setDate(dataFim.getDate() + 6);
+    dataFim.setHours(23, 59, 59, 999);
     nomeArquivo      = `cafe-leal-SEMANA-${String(numSemana).padStart(2, '0')}-${ano}.csv`;
   } else {
     const mes   = parseInt(document.getElementById('mes-selecionar').value);
     const ano   = parseInt(document.getElementById('mes-ano').value);
-    dataInicio  = new Date(ano, mes, 1);
-    dataFim     = new Date(ano, mes + 1, 0);
+    dataInicio  = new Date(ano, mes, 1, 0, 0, 0, 0);
+    dataFim     = new Date(ano, mes + 1, 0, 23, 59, 59, 999);
     nomeArquivo = `cafe-leal-MES-${String(mes + 1).padStart(2, '0')}-${ano}.csv`;
   }
 
@@ -2104,8 +2106,8 @@ function exportarRelatorio() {
   const params = obterParametros();
   const { dataInicio, dataFim, nomeArquivo } = params;
 
-  const filtrarEntrada = c => { const d = new Date(c.fechamento || c.data); return d >= dataInicio && d <= dataFim; };
-  const filtrarSaida   = s => { const d = new Date(s.data); return d >= dataInicio && d <= dataFim; };
+  const filtrarEntrada = c => { const d = parseLocal(c.fechamento || c.data); return d >= dataInicio && d <= dataFim; };
+  const filtrarSaida   = s => { const d = parseLocal(s.data); return d >= dataInicio && d <= dataFim; };
 
   let dados = [];
 
@@ -2115,7 +2117,7 @@ function exportarRelatorio() {
   });
 
   [...compras, ...saidas].filter(filtrarSaida).forEach(s => {
-    dados.push({ data: s.data, tipo: 'Saída', descricao: s.descricao || s.fornecedor || '--', fornecedor: s.fornecedor || '--', categoria: s.categoria, valor: -s.valor, pagamento: s.pagamento || '--', nf: s.nf || '--' });
+    dados.push({ data: parseLocal(s.data).toLocaleDateString('pt-BR'), tipo: 'Saída', descricao: s.descricao || s.fornecedor || '--', fornecedor: s.fornecedor || '--', categoria: s.categoria, valor: -s.valor, pagamento: s.pagamento || '--', nf: s.nf || '--' });
   });
 
   if (!dados.length) return showToast('Nenhum dado para exportar no período', 'error');
