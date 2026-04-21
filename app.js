@@ -131,6 +131,13 @@ async function fazerLogin() {
 function fazerLogout() {
   localStorage.removeItem('cl_token');
   currentUser = null;
+  // Resetar para a página padrão antes de exibir o login
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const pgPadrao = document.getElementById('page-nova-comanda');
+  const tbPadrao = document.getElementById('tab-nova-comanda');
+  if (pgPadrao) pgPadrao.classList.add('active');
+  if (tbPadrao) tbPadrao.classList.add('active');
   document.getElementById('app').classList.remove('active');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-user').value = '';
