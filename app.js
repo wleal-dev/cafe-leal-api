@@ -116,6 +116,8 @@ async function fazerLogin() {
     document.getElementById('app').classList.add('active');
     document.getElementById('user-display').textContent = data.user.nome;
     document.getElementById('user-role').textContent = data.user.role;
+    const _av1 = document.getElementById('user-avatar');
+    if (_av1) _av1.textContent = data.user.nome.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
     updateAccessControls();
     await carregarDados();
     inicializarPagina();
@@ -159,6 +161,8 @@ async function checkSession() {
     document.getElementById('app').classList.add('active');
     document.getElementById('user-display').textContent = user.nome;
     document.getElementById('user-role').textContent = user.role || 'Atendente';
+    const _av2 = document.getElementById('user-avatar');
+    if (_av2) _av2.textContent = user.nome.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
     updateAccessControls();
     await carregarDados();
     inicializarPagina();
@@ -301,76 +305,62 @@ function updateAccessControls() {
 
 // =================== PRODUTOS E CATEGORIAS ===================
 function renderProdutos() {
-  const container = document.getElementById('page-produtos');
+  const container = document.getElementById('produtos-list');
   if (!container) return;
 
-  const gerenteUI = isGerente() ? `
-    <div class="card" style="margin-bottom:1.5rem;">
-      <div class="card-title">Cadastrar categoria</div>
-      <div style="display:flex; gap:8px; align-items:end;">
-        <div style="flex:1;"><label>Nome da categoria</label><input type="text" id="categoria-nome" placeholder="Ex: Bebidas quentes"></div>
-        <button class="btn btn-ghost btn-sm" onclick="adicionarCategoria()" style="height:38px;">＋</button>
-      </div>
-      <div id="categorias-list" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:1rem;"></div>
-    </div>
-    <div class="card" style="margin-bottom:1.5rem;">
-      <div class="card-title">Cadastrar produto</div>
-      <div class="form-row">
-        <div class="form-group"><label>Nome</label><input type="text" id="produto-nome" placeholder="Ex: Cappuccino"></div>
-        <div class="form-group"><label>Preço (R$)</label><input type="number" id="produto-preco" placeholder="0,00" step="0.01" min="0"></div>
-      </div>
-      <div class="form-group">
-        <label>Categoria</label>
-        <select id="produto-categoria">
-          <option value="">Selecione uma categoria</option>
-          ${categorias.map(c => `<option value="${c.id}">${c.nome}</option>`).join('')}
-        </select>
-      </div>
-      <button class="btn btn-gold btn-full" onclick="adicionarProduto()">＋ Cadastrar produto</button>
-    </div>
-  ` : '';
+  const headerActions = document.getElementById('produtos-header-actions');
+  if (headerActions) headerActions.style.display = isGerente() ? 'flex' : 'none';
 
-  const produtosUI = categorias.map(cat => {
-    const items = produtos.filter(p => p.categoriaId === cat.id);
-    return `
-      <div class="card" style="margin-bottom:1rem;">
-        <div class="card-title" style="cursor:pointer; display:flex; align-items:center; justify-content:space-between; user-select:none;" onclick="toggleCategoriaExpand(${cat.id})">
-          <span>${cat.nome} (${items.length})</span>
-          <span id="arrow-${cat.id}">▼</span>
-        </div>
-        <div id="cat-items-${cat.id}" style="display:grid; gap:8px;">
-          ${items.length ? items.map(p => `
-            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.75rem; background:var(--cream); border-radius:10px; border:1px solid var(--border-light);">
-              <div>
-                <strong>${p.nome}</strong><br>
-                <span style="font-size:12px; color:var(--text-muted);">R$ ${p.preco.toFixed(2)}</span>
-              </div>
-              ${isGerente() ? `
-                <div style="display:flex; gap:6px;">
-                  <button class="btn btn-ghost btn-sm" onclick="abrirEdicaoProduto(${p.id})">Editar</button>
-                  <button class="btn btn-danger btn-sm" onclick="removerProduto(${p.id})">Excluir</button>
-                </div>
-              ` : ''}
-            </div>
-          `).join('') : '<div class="empty-state">Nenhum produto cadastrado</div>'}
-        </div>
-      </div>
-    `;
-  }).join('');
+  const todosProdutos = [];
+  categorias.forEach(cat => {
+    produtos.filter(p => p.categoriaId === cat.id).forEach(p => {
+      todosProdutos.push({ ...p, categoriaNome: cat.nome });
+    });
+  });
 
-  container.innerHTML = gerenteUI + produtosUI;
-
-  if (isGerente()) {
-    const catList = document.getElementById('categorias-list');
-    if (catList) {
-      catList.innerHTML = categorias.map(c => `
-        <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:var(--gold-faint); border:1px solid var(--border); border-radius:20px; font-size:12px; font-weight:600;">
-          ${c.nome}
-          <span onclick="removerCategoria(${c.id})" style="cursor:pointer; color:var(--text-muted);" title="Remover">×</span>
-        </span>
-      `).join('');
-    }
+  if (!todosProdutos.length) {
+    container.innerHTML = '<div class="empty-state">Nenhum produto cadastrado ainda.</div>';
+    return;
   }
+
+  const acoesCol = isGerente() ? '<th>Ações</th>' : '';
+  const acoesCell = p => isGerente() ? `
+    <td>
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="abrirEdicaoProduto(${p.id})">Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="removerProduto(${p.id})">Excluir</button>
+      </div>
+    </td>` : '';
+
+  container.innerHTML = `
+    <div class="produtos-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th>Categoria</th>
+            <th>Preço</th>
+            ${acoesCol}
+          </tr>
+        </thead>
+        <tbody>
+          ${todosProdutos.map(p => `
+            <tr>
+              <td>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div class="produto-row-img">☕</div>
+                  <span style="font-weight:600; color:var(--text-primary);">${p.nome}</span>
+                </div>
+              </td>
+              <td><span class="badge badge-info">${p.categoriaNome}</span></td>
+              <td style="font-weight:600;">R$ ${p.preco.toFixed(2)}</td>
+              ${acoesCell(p)}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
 function toggleCategoriaExpand(catId) {
@@ -428,11 +418,23 @@ async function adicionarProduto() {
     document.getElementById('produto-nome').value = '';
     document.getElementById('produto-preco').value = '';
     document.getElementById('produto-categoria').value = '';
+    document.getElementById('modal-novo-produto')?.classList.remove('open');
     renderProdutos();
     showToast('Produto adicionado!');
   } catch (err) {
     showToast('Erro ao adicionar produto: ' + err.message, 'error');
   }
+}
+
+function abrirNovoProduto() {
+  const select = document.getElementById('produto-categoria');
+  if (select) {
+    select.innerHTML = '<option value="">Selecione uma categoria</option>' +
+      categorias.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+  }
+  document.getElementById('produto-nome').value = '';
+  document.getElementById('produto-preco').value = '';
+  document.getElementById('modal-novo-produto').classList.add('open');
 }
 
 function abrirEdicaoProduto(produtoId) {
@@ -1275,6 +1277,10 @@ function renderCaixa() {
       : '<span style="font-size:13px; color:var(--text-muted);">Nenhuma venda ainda</span>';
   }
 
+  // Atualiza resumo lateral
+  const totalResumo = document.getElementById('stat-total-resumo');
+  if (totalResumo) totalResumo.textContent = 'R$ ' + totalDia.toFixed(2);
+
   const list = document.getElementById('historico-list');
   if (!historico.length) {
     list.innerHTML = '<div class="empty-state">Nenhuma comanda fechada hoje</div>';
@@ -1282,37 +1288,43 @@ function renderCaixa() {
     return;
   }
 
-  list.innerHTML = [...historico].reverse().map(c => {
-    const valorExibido = (c.totalFinal ?? c.total).toFixed(2);
-    const descBadge = c.desconto > 0
-      ? `<span style="font-size:10px; background:var(--gold-pale); color:var(--brown-soft); padding:2px 6px; border-radius:10px; margin-left:4px;">-R$ ${c.desconto.toFixed(2)}</span>`
-      : '';
-    const pagBadge = c.formaPagamento
-      ? `<span style="font-size:10px; background:var(--cream-dark); color:var(--text-mid); padding:2px 6px; border-radius:10px;">${c.formaPagamento}</span>`
-      : '';
-    // F5 — itens da comanda
-    const itensHtml = c.itens && c.itens.length
-      ? `<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">${c.itens.map(i =>
-          `<span style="font-size:10px; background:var(--cream); color:var(--text-mid); padding:2px 6px; border-radius:4px;">${i.nome} ×${i.qty}</span>`
-        ).join('')}</div>`
-      : '';
-    // F7 — quem abriu e quem fechou
-    const operadores = `Aberto: ${c.operador || '?'} · Fechado: ${c.operadorFechamento || '?'}`;
-    return `
-      <div class="historico-item" style="flex-direction:column; align-items:flex-start;">
-        <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start;">
-          <div class="historico-info">
-            <h4>${c.nome} · Mesa ${c.mesa} ${descBadge}</h4>
-            <p>${c.hora || '--'} → ${c.horaFechamento || '--'} · ${c.itens.length} item${c.itens.length > 1 ? 's' : ''} · ${operadores} ${pagBadge}</p>
-          </div>
-          <span class="historico-valor">+ R$ ${valorExibido}</span>
-        </div>
-        ${itensHtml}
-      </div>
-    `;
-  }).join('');
+  list.innerHTML = `
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Horário</th>
+          <th>Mesa</th>
+          <th>Cliente</th>
+          <th>Total</th>
+          <th>Pagamento</th>
+          <th>Atendente</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${[...historico].reverse().map(c => {
+          const valor = (c.totalFinal ?? c.total).toFixed(2);
+          const cls = _badgeClass(c.formaPagamento);
+          const pagBadge = c.formaPagamento
+            ? `<span class="badge ${cls}">${c.formaPagamento}</span>` : '--';
+          return `
+            <tr>
+              <td style="color:var(--text-muted); white-space:nowrap;">${c.horaFechamento || '--'}</td>
+              <td>Mesa ${c.mesa}</td>
+              <td style="font-weight:600;">${c.nome}</td>
+              <td style="font-weight:700; color:var(--green);">R$ ${valor}</td>
+              <td>${pagBadge}</td>
+              <td style="color:var(--text-muted);">${c.operadorFechamento || c.operador || '--'}</td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
 
   updateAccessControls();
+}
+
+function _badgeClass(forma) {
+  const map = { 'Pix': 'badge-pix', 'Dinheiro': 'badge-dinheiro', 'Débito': 'badge-cartao', 'Crédito': 'badge-cartao', 'Cancelada': 'badge-cancelada' };
+  return map[forma] || 'badge-info';
 }
 
 // =================== RELATÓRIOS ===================
