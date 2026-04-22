@@ -138,12 +138,14 @@ body {
 }
 
 .login-logo {
-  width: 80px;
-  height: 80px;
-  border-radius: 0;
-  margin-bottom: 1.5rem;
+  width: 140px;
+  height: 140px;
+  margin-bottom: 2rem;
   object-fit: contain;
   background: transparent;
+  /* Remove fundo branco e deixa o logo em preto */
+  filter: brightness(0);
+  mix-blend-mode: multiply;
 }
 
 .login-title {
@@ -251,12 +253,21 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .sidebar-logo-img {
-  width: 44px;
-  height: 44px;
-  border-radius: 0;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
   background: transparent;
+  /* Inverte para ficarvbranco na sidebar escura */
+  filter: brightness(0) invert(1);
 }
 
 .sidebar-logo-name {
