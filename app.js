@@ -1492,27 +1492,20 @@ function renderCaixa() {
             <tr>
               <td style="color:var(--text-muted); white-space:nowrap;">${c.horaFechamento || '--'}</td>
               <td>Mesa ${c.mesa}</td>
-              <td style="font-weight:600;">${c.nome}</td>
+              <td>
+                <div style="font-weight:600;">${c.nome}</div>
+                ${Array.isArray(c.itens) && c.itens.length ? `
+                <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">
+                  ${c.itens.map(it => `${it.qty}× ${it.nome}`).join(' · ')}
+                </div>` : ''}
+              </td>
               <td style="font-weight:700; color:var(--green);">R$ ${valor}</td>
               <td>${pagBadge}</td>
               <td style="font-size:12px; line-height:1.6;">
                 <span style="color:var(--text-muted);">↑ ${c.operador || '--'}</span><br>
                 <span style="color:var(--text-main); font-weight:600;">↓ ${c.operadorFechamento || '--'}</span>
               </td>
-            </tr>
-            ${Array.isArray(c.itens) && c.itens.length ? `
-            <tr>
-              <td colspan="6" style="padding:0 12px 10px; border-top:none;">
-                <div style="display:flex; flex-wrap:wrap; gap:6px;">
-                  ${c.itens.map(it => `
-                    <span style="font-size:11px; background:var(--bg-app); border:1px solid var(--border);
-                                 border-radius:20px; padding:2px 10px; color:var(--text-muted); white-space:nowrap;">
-                      ${it.qty}× ${it.nome}
-                    </span>`).join('')}
-                </div>
-              </td>
-            </tr>` : ''}`;
-        }).join('')}
+            </tr>`;        }).join('')}
       </tbody>
     </table>`;
 
