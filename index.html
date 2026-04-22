@@ -337,6 +337,22 @@
         </div>
       </div>
 
+      <div id="troco-box" style="display:none; margin-bottom:1.25rem;">
+        <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:0.5rem;">Valor recebido em dinheiro (R$)</div>
+        <input type="number" id="valor-recebido" min="0" step="0.01" placeholder="Ex: 50.00"
+               oninput="calcularTroco()" style="width:100%; font-size:18px;">
+        <div id="troco-resultado" style="display:none; margin-top:0.75rem; padding:0.875rem;
+             border-radius:8px; background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.35);
+             text-align:center;">
+          <div style="font-size:11px; color:var(--text-muted); margin-bottom:2px;">Troco</div>
+          <div id="troco-valor" style="font-size:26px; font-weight:800; color:var(--green);">R$ 0,00</div>
+        </div>
+        <div id="troco-insuficiente" style="display:none; margin-top:0.5rem; font-size:12px;
+             color:#ef4444; text-align:center; font-weight:600;">
+          ⚠ Valor insuficiente para cobrir R$ <span id="troco-total-ref">0,00</span>
+        </div>
+      </div>
+
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
         <button class="btn btn-gold" onclick="confirmarFechamento()">✓ Confirmar</button>

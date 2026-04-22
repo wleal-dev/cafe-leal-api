@@ -1057,6 +1057,8 @@ function iniciarFechamento(id) {
 
   formaPagamentoSelecionada = '';
   document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+  const trocoBox = document.getElementById('troco-box');
+  if (trocoBox) trocoBox.style.display = 'none';
   document.getElementById('modal-fechar').classList.add('open');
 }
 
@@ -1227,6 +1229,53 @@ function selecionarPagamento(btn, forma) {
   document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   formaPagamentoSelecionada = forma;
+
+  const trocoBox = document.getElementById('troco-box');
+  if (!trocoBox) return;
+  if (forma === 'Dinheiro') {
+    trocoBox.style.display = 'block';
+    document.getElementById('valor-recebido').value = '';
+    document.getElementById('troco-resultado').style.display = 'none';
+    document.getElementById('troco-insuficiente').style.display = 'none';
+    const totalFinal = _getTotalFinalAtual();
+    const refEl = document.getElementById('troco-total-ref');
+    if (refEl) refEl.textContent = totalFinal.toFixed(2).replace('.', ',');
+  } else {
+    trocoBox.style.display = 'none';
+  }
+}
+
+function _getTotalFinalAtual() {
+  if (!comandaParaFechar) return 0;
+  const descAplicadoEl = document.getElementById('desconto-aplicado');
+  const descAplicado = descAplicadoEl
+    ? parseFloat(descAplicadoEl.textContent.replace('R$ ', '').replace(',', '.')) || 0
+    : 0;
+  return Math.max(0, comandaParaFechar.total - descAplicado);
+}
+
+function calcularTroco() {
+  const recebido = parseFloat(document.getElementById('valor-recebido').value) || 0;
+  const totalFinal = _getTotalFinalAtual();
+  const trocoEl     = document.getElementById('troco-resultado');
+  const insufEl     = document.getElementById('troco-insuficiente');
+  const valorEl     = document.getElementById('troco-valor');
+
+  if (!recebido) {
+    trocoEl.style.display = 'none';
+    insufEl.style.display = 'none';
+    return;
+  }
+  if (recebido < totalFinal) {
+    trocoEl.style.display = 'none';
+    insufEl.style.display = 'block';
+    const refEl = document.getElementById('troco-total-ref');
+    if (refEl) refEl.textContent = totalFinal.toFixed(2).replace('.', ',');
+    return;
+  }
+  insufEl.style.display = 'none';
+  trocoEl.style.display = 'block';
+  valorEl.textContent = 'R$ ' + (recebido - totalFinal).toFixed(2).replace('.', ',');
 }
 
 async function confirmarFechamento() {
@@ -1276,7 +1325,15 @@ async function confirmarFechamento() {
     renderComandas();
 
     const msgDesc = descAplicado > 0 ? ` | Desconto R$ ${descAplicado.toFixed(2)}` : '';
-    showToast(`✓ R$ ${totalFinal.toFixed(2)} · ${formaPagamento}${msgDesc}`, 'success');
+    let msgTroco = '';
+    if (formaPagamento === 'Dinheiro') {
+      const recebido = parseFloat(document.getElementById('valor-recebido')?.value) || 0;
+      if (recebido >= totalFinal) {
+        const troco = recebido - totalFinal;
+        msgTroco = ` | Troco R$ ${troco.toFixed(2).replace('.', ',')}`;
+      }
+    }
+    showToast(`✓ R$ ${totalFinal.toFixed(2)} · ${formaPagamento}${msgDesc}${msgTroco}`, 'success');
   } catch (err) {
     showToast('Erro ao fechar comanda: ' + err.message, 'error');
   }
