@@ -138,14 +138,13 @@ body {
 }
 
 .login-logo {
-  width: 140px;
-  height: 140px;
-  margin-bottom: 2rem;
+  width: 180px;
+  height: 180px;
   object-fit: contain;
-  background: transparent;
-  /* Remove fundo branco e deixa o logo em preto */
-  filter: brightness(0);
-  mix-blend-mode: multiply;
+  display: block;
+  margin-bottom: 2rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .login-title {
@@ -265,9 +264,6 @@ body {
   width: 72px;
   height: 72px;
   object-fit: contain;
-  background: transparent;
-  /* Inverte para ficarvbranco na sidebar escura */
-  filter: brightness(0) invert(1);
 }
 
 .sidebar-logo-name {
