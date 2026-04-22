@@ -258,7 +258,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 0.5rem;
+  padding: 1.5rem 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -267,8 +267,8 @@ body {
   max-width: 130px;
   height: auto;
   object-fit: contain;
-  /* Calibrado para var(--gold) = #c9a84c */
-  filter: brightness(0) saturate(100%) invert(73%) sepia(42%) saturate(720%) hue-rotate(5deg) brightness(87%);
+  /* Mesmo filtro do logo do login */
+  filter: brightness(0) saturate(100%) invert(72%) sepia(38%) saturate(380%) hue-rotate(8deg) brightness(78%);
 }
 
 .sidebar-logo-name {
