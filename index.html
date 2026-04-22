@@ -111,12 +111,12 @@
             </div>
             <div class="order-receipt-body">
               <div id="form-item-avulso" style="display:none;">
-                <div class="add-item-grid">
-                  <div><label>Item</label><input type="text" id="item-nome" placeholder="Ex: Cappuccino" autocomplete="off" onkeypress="handleEnterEmItem(event)"></div>
+                <div class="add-item-grid" style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">
+                  <div style="grid-column: 1 / -1;"><label>Item</label><input type="text" id="item-nome" placeholder="Ex: Cappuccino" autocomplete="off" onkeypress="handleEnterEmItem(event)"></div>
                   <div><label>Qtd</label><input type="number" id="item-qty" value="1" min="1"></div>
                   <div><label>R$</label><input type="number" id="item-preco" placeholder="0,00" step="0.01" min="0" onkeypress="handleEnterEmItem(event)"></div>
-                  <div><label style="opacity:0;">x</label><button class="btn btn-gold" onclick="addItem()" style="height:38px;">＋</button></div>
-                  <div style="grid-column:1 / -1;"><label>Observações</label><input type="text" id="item-nota" placeholder="Ex: Sem açúcar, leite de aveia" onkeypress="handleEnterEmNota(event)"></div>
+                  <div style="display:flex; align-items:flex-end;"><button class="btn btn-gold btn-full" onclick="addItem()" style="height:38px;">＋ Add</button></div>
+                  <div style="grid-column:1 / -1; margin-top:4px;"><label>Observações</label><input type="text" id="item-nota" placeholder="Ex: Sem açúcar, leite de aveia" onkeypress="handleEnterEmNota(event)"></div>
                 </div>
               </div>
               <button id="btn-liberar-avulso" class="btn btn-ghost btn-full" onclick="abrirModalSenhaAvulso()" style="margin-bottom:0.75rem; font-size:13px;">🔒 Item avulso</button>
@@ -227,17 +227,7 @@
                 </div>
               </div>
             </div>
-            <div class="card" style="margin-bottom:0;">
-              <div class="card-title">Período</div>
-              <div class="periodo-form">
-                <div class="periodo-form-row">
-                  <input type="date" id="periodo-inicio" style="flex:1;">
-                  <span class="periodo-separator">→</span>
-                  <input type="date" id="periodo-fim" style="flex:1;">
-                </div>
-                <button class="btn btn-dark btn-full" style="margin-top:0.25rem;" onclick="aplicarFiltroPeriodo()">Aplicar filtro</button>
-              </div>
-            </div>
+
           </div>
         </div>
 
@@ -259,8 +249,7 @@
             <p class="page-subtitle">Gerencie seu catálogo de forma simples e eficiente</p>
           </div>
           <div class="page-header-actions" id="produtos-header-actions" style="display:none;">
-            <input type="text" id="categoria-nome" placeholder="Nova categoria" style="width:160px;">
-            <button class="btn btn-ghost btn-sm" onclick="adicionarCategoria()">＋ Nova Categoria</button>
+            <button class="btn btn-ghost btn-sm" onclick="abrirGerenciarCategorias()">📋 Gerenciar Categorias</button>
             <button class="btn btn-dark btn-sm" onclick="abrirNovoProduto()">＋ Novo Produto</button>
           </div>
         </div>
@@ -269,10 +258,7 @@
           <select id="filtro-categoria-produto" onchange="renderProdutos()">
             <option value="">Todas as categorias</option>
           </select>
-          <select id="filtro-status-produto" onchange="renderProdutos()">
-            <option value="">Todos os status</option>
-            <option value="ativo">Ativos</option>
-          </select>
+
         </div>
         <div class="card">
           <div id="produtos-list"></div>
@@ -537,6 +523,22 @@
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="document.getElementById('modal-editar-compra').classList.remove('open')">Cancelar</button>
         <button class="btn btn-success" onclick="salvarEdicaoCompra()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-gerenciar-categorias">
+  <div class="modal">
+    <div class="modal-header"><h3>Gerenciar Categorias</h3><p>Crie, edite ou exclua categorias</p></div>
+    <div class="modal-body">
+      <div style="display:flex; gap:8px; margin-bottom:1rem;">
+        <input type="text" id="nova-categoria-nome" placeholder="Nome da nova categoria" style="flex:1;">
+        <button class="btn btn-dark" onclick="adicionarCategoriaList()">＋ Adicionar</button>
+      </div>
+      <div id="lista-categorias-gerenciar" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-success" onclick="document.getElementById('modal-gerenciar-categorias').classList.remove('open')">Concluir</button>
       </div>
     </div>
   </div>

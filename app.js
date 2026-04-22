@@ -352,14 +352,6 @@ function renderProdutos() {
       </div>
     </td>` : '';
 
-  const statusCell = p => `
-    <td>
-      <label class="toggle-switch on" onclick="removerProduto(${p.id})" title="Clique para desativar" style="cursor:pointer;">
-        <span class="toggle-track"></span>
-        <span class="toggle-label">Ativo</span>
-      </label>
-    </td>`;
-
   container.innerHTML = `
     <div class="produtos-table-wrapper">
       <table class="data-table">
@@ -368,7 +360,6 @@ function renderProdutos() {
             <th>Produto</th>
             <th>Categoria</th>
             <th>Preço</th>
-            <th>Status</th>
             ${acoesHead}
           </tr>
         </thead>
@@ -376,19 +367,12 @@ function renderProdutos() {
           ${filtrados.map(p => `
             <tr>
               <td>
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <div class="produto-row-img">☕</div>
-                  <span style="font-weight:600; color:var(--text-primary);">${p.nome}</span>
-                </div>
+                <span style="font-weight:600; color:var(--text-primary);">${p.nome}</span>
               </td>
               <td>
-                <div style="display:flex; align-items:center; gap:6px; color:var(--text-secondary); font-size:13px;">
-                  <span style="font-size:14px;">🍽️</span>
-                  <span>${p.categoriaNome}</span>
-                </div>
+                <span style="color:var(--text-secondary); font-size:13px;">${p.categoriaNome}</span>
               </td>
               <td style="font-weight:600;">R$ ${p.preco.toFixed(2)}</td>
-              ${statusCell(p)}
               ${acoesCell(p)}
             </tr>
           `).join('')}
@@ -425,9 +409,29 @@ function handleEnterEmNota(e) {
   if (e.key === 'Enter') { e.preventDefault(); addItem(); }
 }
 
-// =================== CATEGORIAS ===================
-async function adicionarCategoria() {
-  const nome = document.getElementById('categoria-nome').value.trim();
+function abrirGerenciarCategorias() {
+  renderCategoriasGerenciar();
+  document.getElementById('modal-gerenciar-categorias').classList.add('open');
+}
+
+function renderCategoriasGerenciar() {
+  const list = document.getElementById('lista-categorias-gerenciar');
+  if (!list) return;
+  if (!categorias.length) {
+    list.innerHTML = '<div style="color:var(--text-muted); font-size:13px; text-align:center; padding:1rem;">Nenhuma categoria cadastrada.</div>';
+    return;
+  }
+  list.innerHTML = categorias.map(c => `
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border:1px solid var(--card-border); border-radius:8px;">
+      <span style="font-size:14px; font-weight:500;">${c.nome}</span>
+      <button class="btn btn-danger btn-sm" onclick="excluirCategoriaList(${c.id})" title="Excluir">🗑️</button>
+    </div>
+  `).join('');
+}
+
+async function adicionarCategoriaList() {
+  const nomeInput = document.getElementById('nova-categoria-nome');
+  const nome = nomeInput.value.trim();
   if (!nome) return showToast('Digite o nome da categoria', 'error');
   if (categorias.find(c => c.nome.toLowerCase() === nome.toLowerCase())) {
     return showToast('Categoria já existe', 'error');
@@ -435,11 +439,39 @@ async function adicionarCategoria() {
   try {
     const nova = await apiFetch('/categorias', { method: 'POST', body: { nome } });
     categorias.push(nova);
-    document.getElementById('categoria-nome').value = '';
+    nomeInput.value = '';
+    renderCategoriasGerenciar();
     renderProdutos();
+    const selectCat = document.getElementById('filtro-categoria-produto');
+    if (selectCat) selectCat.add(new Option(nova.nome, nova.id));
     showToast('Categoria adicionada!');
   } catch (err) {
     showToast('Erro ao adicionar categoria: ' + err.message, 'error');
+  }
+}
+
+async function excluirCategoriaList(id) {
+  if (produtos.some(p => p.categoriaId === id)) {
+    return showToast('Não é possível excluir: existem produtos nesta categoria', 'error');
+  }
+  if (!confirm('Deseja realmente excluir esta categoria?')) return;
+  try {
+    await apiFetch('/categorias/' + id, { method: 'DELETE' });
+    categorias = categorias.filter(c => c.id !== id);
+    renderCategoriasGerenciar();
+    renderProdutos();
+    const selectCat = document.getElementById('filtro-categoria-produto');
+    if (selectCat) {
+      for (let i = 0; i < selectCat.options.length; i++) {
+        if (selectCat.options[i].value == id) {
+          selectCat.remove(i);
+          break;
+        }
+      }
+    }
+    showToast('Categoria excluída!');
+  } catch (err) {
+    showToast('Erro ao excluir categoria: ' + err.message, 'error');
   }
 }
 
