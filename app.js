@@ -285,8 +285,7 @@ function showPage(page, el) {
 
 // =================== ACCESS CONTROLS ===================
 function updateAccessControls() {
-  const limparBtn = document.getElementById('btn-limpar-dia');
-  if (limparBtn) limparBtn.style.display = isGerente() ? 'inline-flex' : 'none';
+
 
   const tabs = {
     'tab-nova-comanda': !isFinanceiro(),
@@ -1485,19 +1484,7 @@ function renderRelatorios() {
 
 }
 
-// =================== LIMPAR HISTÓRICO ===================
-async function limparHistorico() {
-  if (!isGerente()) return showToast('Apenas gerente pode limpar o histórico', 'error');
-  if (!confirm('Limpar o histórico do dia? Esta ação não pode ser desfeita.')) return;
-  try {
-    await apiFetch('/historico', { method: 'DELETE' });
-    historico = [];
-    renderCaixa();
-    showToast('Histórico limpo');
-  } catch (err) {
-    showToast('Erro ao limpar histórico: ' + err.message, 'error');
-  }
-}
+// =================== LIMPAR HISTÓRICO (removido) ===================
 
 // =================== COMPRAS E FORNECEDORES ===================
 function renderCompras() {
