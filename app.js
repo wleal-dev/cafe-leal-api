@@ -1499,7 +1499,10 @@ function renderCaixa() {
                   ${c.itens.map(it => `${it.qty}× ${it.nome}`).join(' · ')}
                 </div>` : ''}
               </td>
-              <td style="font-weight:700; color:var(--green);">R$ ${valor}</td>
+              <td>
+                <div style="font-weight:700; color:var(--green);">R$ ${valor}</div>
+                ${c.desconto > 0 ? `<div style="font-size:11px; color:var(--text-muted);">desc. R$ ${parseFloat(c.desconto).toFixed(2)}</div>` : ''}
+              </td>
               <td>${pagBadge}</td>
               <td style="font-size:12px; line-height:1.6;">
                 <span style="color:var(--text-muted);">↑ ${c.operador || '--'}</span><br>
