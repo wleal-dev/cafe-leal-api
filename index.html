@@ -87,32 +87,29 @@
           </div>
         </div>
         <div class="comanda-layout-grid">
-          <!-- ESQUERDA: Produtos -->
+          <!-- ESQUERDA: Campos + Produtos -->
           <div class="card produtos-panel">
+            <div class="form-row" style="margin-bottom:1rem;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label>Nome do cliente</label>
+                <input type="text" id="cliente-nome" placeholder="Ex: Ana" autocomplete="off" onkeypress="handleEnterEmCliente(event)">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label>Mesa</label>
+                <input type="text" id="cliente-mesa" placeholder="Selecione a mesa..." autocomplete="off" list="mesas-list" onkeypress="handleEnterEmMesa(event)">
+                <datalist id="mesas-list"></datalist>
+              </div>
+            </div>
             <div id="categoria-pills" class="categoria-pills-wrapper"></div>
             <div id="produtos-grid" class="produtos-comanda-grid"></div>
           </div>
-          <!-- DIREITA: Pedido -->
+          <!-- DIREITA: Pedido (receipt) -->
           <div class="order-panel">
-            <div class="order-panel-header">
-              <div>
-                <div class="order-panel-title">Pedido atual</div>
-              </div>
+            <div class="order-receipt-header">
+              <span class="order-receipt-id">Pedido atual</span>
+              <span class="order-receipt-count" id="order-item-count">0 itens</span>
             </div>
-            <div class="card" style="margin-bottom:1rem;">
-              <div class="form-row">
-                <div class="form-group" style="margin-bottom:0;">
-                  <label>Nome do cliente</label>
-                  <input type="text" id="cliente-nome" placeholder="Ex: Ana" autocomplete="off" onkeypress="handleEnterEmCliente(event)">
-                </div>
-                <div class="form-group" style="margin-bottom:0;">
-                  <label>Mesa</label>
-                  <input type="text" id="cliente-mesa" placeholder="Ex: 3" autocomplete="off" list="mesas-list" onkeypress="handleEnterEmMesa(event)">
-                </div>
-              </div>
-              <datalist id="mesas-list"></datalist>
-            </div>
-            <div class="card order-items-card">
+            <div class="order-receipt-body">
               <div id="form-item-avulso" style="display:none;">
                 <div class="add-item-grid">
                   <div><label>Item</label><input type="text" id="item-nome" placeholder="Ex: Cappuccino" autocomplete="off" onkeypress="handleEnterEmItem(event)"></div>
@@ -124,11 +121,13 @@
               </div>
               <button id="btn-liberar-avulso" class="btn btn-ghost btn-full" onclick="abrirModalSenhaAvulso()" style="margin-bottom:0.75rem; font-size:13px;">🔒 Item avulso</button>
               <div class="items-list" id="items-list"><div class="empty-state">Nenhum item adicionado</div></div>
-              <div class="total-bar">
-                <span class="total-label">Total</span>
-                <span class="total-value" id="total-display">R$ 0,00</span>
+            </div>
+            <div class="order-receipt-footer">
+              <div class="order-total-line">
+                <span class="order-total-label">Total</span>
+                <span class="order-total-value" id="total-display">R$ 0,00</span>
               </div>
-              <button class="btn btn-dark btn-full" onclick="abrirComanda()" style="padding:0.8rem; font-size:15px; font-weight:600;">Abrir comanda</button>
+              <button class="btn-cobrar" onclick="abrirComanda()">Cobrar</button>
             </div>
           </div>
         </div>
@@ -170,27 +169,31 @@
             <div>
               <div class="stat-value" id="stat-total">R$ 0,00</div>
               <div class="stat-label">Total vendido</div>
+              <div class="stat-subtext">Hoje</div>
             </div>
           </div>
           <div class="stat-card">
             <div class="stat-icon stat-icon-blue">◫</div>
             <div>
               <div class="stat-value" id="stat-abertas">0</div>
-              <div class="stat-label">Em aberto</div>
+              <div class="stat-label">Comandas abertas</div>
+              <div class="stat-subtext">Em andamento</div>
             </div>
           </div>
           <div class="stat-card">
             <div class="stat-icon stat-icon-gold">✓</div>
             <div>
               <div class="stat-value" id="stat-fechadas">0</div>
-              <div class="stat-label">Fechadas</div>
+              <div class="stat-label">Comandas fechadas</div>
+              <div class="stat-subtext">Hoje</div>
             </div>
           </div>
           <div class="stat-card">
-            <div class="stat-icon stat-icon-purple">⏱</div>
+            <div class="stat-icon stat-icon-purple">🎯</div>
             <div>
-              <div class="stat-value" id="stat-media-tempo">--</div>
-              <div class="stat-label">Tempo médio</div>
+              <div class="stat-value" id="stat-ticket-medio">R$ 0,00</div>
+              <div class="stat-label">Ticket médio</div>
+              <div class="stat-subtext">Por comanda</div>
             </div>
           </div>
         </div>
@@ -224,6 +227,17 @@
                 </div>
               </div>
             </div>
+            <div class="card" style="margin-bottom:0;">
+              <div class="card-title">Período</div>
+              <div class="periodo-form">
+                <div class="periodo-form-row">
+                  <input type="date" id="periodo-inicio" style="flex:1;">
+                  <span class="periodo-separator">→</span>
+                  <input type="date" id="periodo-fim" style="flex:1;">
+                </div>
+                <button class="btn btn-dark btn-full" style="margin-top:0.25rem;" onclick="aplicarFiltroPeriodo()">Aplicar filtro</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -246,9 +260,19 @@
           </div>
           <div class="page-header-actions" id="produtos-header-actions" style="display:none;">
             <input type="text" id="categoria-nome" placeholder="Nova categoria" style="width:160px;">
-            <button class="btn btn-ghost btn-sm" onclick="adicionarCategoria()">＋ Categoria</button>
+            <button class="btn btn-ghost btn-sm" onclick="adicionarCategoria()">＋ Nova Categoria</button>
             <button class="btn btn-dark btn-sm" onclick="abrirNovoProduto()">＋ Novo Produto</button>
           </div>
+        </div>
+        <div class="filter-bar" id="produtos-filter-bar" style="display:none;">
+          <input type="text" id="busca-produto" placeholder="Buscar produto..." oninput="renderProdutos()">
+          <select id="filtro-categoria-produto" onchange="renderProdutos()">
+            <option value="">Todas as categorias</option>
+          </select>
+          <select id="filtro-status-produto" onchange="renderProdutos()">
+            <option value="">Todos os status</option>
+            <option value="ativo">Ativos</option>
+          </select>
         </div>
         <div class="card">
           <div id="produtos-list"></div>

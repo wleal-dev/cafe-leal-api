@@ -311,26 +311,54 @@ function renderProdutos() {
   const headerActions = document.getElementById('produtos-header-actions');
   if (headerActions) headerActions.style.display = isGerente() ? 'flex' : 'none';
 
+  const filterBar = document.getElementById('produtos-filter-bar');
+  if (filterBar) filterBar.style.display = 'flex';
+
+  const catSelect = document.getElementById('filtro-categoria-produto');
+  if (catSelect && catSelect.options.length <= 1) {
+    categorias.forEach(c => catSelect.add(new Option(c.nome, c.id)));
+  }
+
+  const busca = (document.getElementById('busca-produto')?.value || '').toLowerCase();
+  const filtroCategoria = document.getElementById('filtro-categoria-produto')?.value || '';
+
   const todosProdutos = [];
   categorias.forEach(cat => {
     produtos.filter(p => p.categoriaId === cat.id).forEach(p => {
       todosProdutos.push({ ...p, categoriaNome: cat.nome });
     });
   });
+  produtos.filter(p => !p.categoriaId).forEach(p => {
+    todosProdutos.push({ ...p, categoriaNome: 'Sem categoria' });
+  });
 
-  if (!todosProdutos.length) {
-    container.innerHTML = '<div class="empty-state">Nenhum produto cadastrado ainda.</div>';
+  const filtrados = todosProdutos.filter(p => {
+    if (busca && !p.nome.toLowerCase().includes(busca)) return false;
+    if (filtroCategoria && String(p.categoriaId) !== String(filtroCategoria)) return false;
+    return true;
+  });
+
+  if (!filtrados.length) {
+    container.innerHTML = '<div class="empty-state">Nenhum produto encontrado.</div>';
     return;
   }
 
-  const acoesCol = isGerente() ? '<th>Ações</th>' : '';
+  const acoesHead = isGerente() ? '<th>Ações</th>' : '';
   const acoesCell = p => isGerente() ? `
     <td>
-      <div style="display:flex; gap:6px;">
-        <button class="btn btn-ghost btn-sm" onclick="abrirEdicaoProduto(${p.id})">Editar</button>
-        <button class="btn btn-danger btn-sm" onclick="removerProduto(${p.id})">Excluir</button>
+      <div style="display:flex; gap:4px;">
+        <button class="btn btn-ghost btn-sm" onclick="abrirEdicaoProduto(${p.id})" title="Editar" style="padding:0.3rem 0.5rem;">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="removerProduto(${p.id})" title="Excluir" style="padding:0.3rem 0.5rem;">🗑️</button>
       </div>
     </td>` : '';
+
+  const statusCell = p => `
+    <td>
+      <label class="toggle-switch on" onclick="removerProduto(${p.id})" title="Clique para desativar" style="cursor:pointer;">
+        <span class="toggle-track"></span>
+        <span class="toggle-label">Ativo</span>
+      </label>
+    </td>`;
 
   container.innerHTML = `
     <div class="produtos-table-wrapper">
@@ -340,11 +368,12 @@ function renderProdutos() {
             <th>Produto</th>
             <th>Categoria</th>
             <th>Preço</th>
-            ${acoesCol}
+            <th>Status</th>
+            ${acoesHead}
           </tr>
         </thead>
         <tbody>
-          ${todosProdutos.map(p => `
+          ${filtrados.map(p => `
             <tr>
               <td>
                 <div style="display:flex; align-items:center; gap:10px;">
@@ -352,13 +381,22 @@ function renderProdutos() {
                   <span style="font-weight:600; color:var(--text-primary);">${p.nome}</span>
                 </div>
               </td>
-              <td><span class="badge badge-info">${p.categoriaNome}</span></td>
+              <td>
+                <div style="display:flex; align-items:center; gap:6px; color:var(--text-secondary); font-size:13px;">
+                  <span style="font-size:14px;">🍽️</span>
+                  <span>${p.categoriaNome}</span>
+                </div>
+              </td>
               <td style="font-weight:600;">R$ ${p.preco.toFixed(2)}</td>
+              ${statusCell(p)}
               ${acoesCell(p)}
             </tr>
           `).join('')}
         </tbody>
       </table>
+      <div style="padding:0.75rem 1rem; font-size:12px; color:var(--text-muted); border-top:1px solid var(--card-border);">
+        Mostrando 1 a ${filtrados.length} de ${todosProdutos.length} produto${todosProdutos.length !== 1 ? 's' : ''}
+      </div>
     </div>
   `;
 }
@@ -531,6 +569,9 @@ function editarItemNota(index) {
 
 function renderItems() {
   const list = document.getElementById('items-list');
+  const countEl = document.getElementById('order-item-count');
+  const total = itensComanda.reduce((s, i) => s + i.preco * i.qty, 0);
+  if (countEl) countEl.textContent = `${itensComanda.length} item${itensComanda.length !== 1 ? 's' : ''}`;
   if (!itensComanda.length) {
     list.innerHTML = '<div class="empty-state">Nenhum item adicionado</div>';
     document.getElementById('total-display').textContent = 'R$ 0,00';
@@ -548,7 +589,7 @@ function renderItems() {
       ${item.nota ? `<div class="item-note-text">${item.nota}</div>` : ''}
     </div>
   `).join('');
-  document.getElementById('total-display').textContent = 'R$ ' + itensComanda.reduce((s, i) => s + i.preco * i.qty, 0).toFixed(2);
+  document.getElementById('total-display').textContent = 'R$ ' + total.toFixed(2);
 }
 
 function inicializarFiltrosCategorias() {
@@ -672,10 +713,17 @@ function renderComandas() {
     <div class="comanda-card">
       <div class="comanda-header">
         <div class="comanda-info">
-          <h3>${c.nome}</h3>
-          <div class="comanda-meta"><span>Mesa ${c.mesa}</span><span>·</span><span>${c.hora}</span><span>·</span><span>${c.itens.length} item${c.itens.length > 1 ? 's' : ''}</span><span>·</span><span>${c.operador || ''}</span></div>
+          <h3>Mesa ${c.mesa || c.nome}</h3>
+          <div class="comanda-meta">
+            <span>${c.nome}</span>
+            <span>·</span>
+            <span>${c.hora || '--'}</span>
+            <span>·</span>
+            <span>${c.itens.length} item${c.itens.length !== 1 ? 's' : ''}</span>
+            ${c.operador ? `<span>· Atend: ${c.operador}</span>` : ''}
+          </div>
         </div>
-        <span class="badge badge-open">aberta</span>
+        <span class="badge badge-open">Aberta</span>
       </div>
       <div class="comanda-body">
         <div class="comanda-items">
@@ -697,11 +745,11 @@ function renderComandas() {
           `).join('')}
         </div>
         <div class="comanda-footer">
-          <span class="comanda-total">Total: R$ ${c.total.toFixed(2)}</span>
+          <span class="comanda-total">Total consumido: R$ ${c.total.toFixed(2)}</span>
           <div class="comanda-actions">
             <button class="btn btn-ghost btn-sm" onclick="iniciarDivisao(${c.id})">Dividir</button>
             <button class="btn btn-danger btn-sm" onclick="cancelarComanda(${c.id})">Cancelar</button>
-            <button class="btn btn-success btn-sm" onclick="iniciarFechamento(${c.id})">Fechar comanda</button>
+            <button class="btn btn-success btn-sm" onclick="iniciarFechamento(${c.id})">Pagar</button>
           </div>
         </div>
       </div>
@@ -1254,11 +1302,19 @@ function cancelarComanda(id) {
 }
 
 // =================== CAIXA ===================
+function aplicarFiltroPeriodo() {
+  showToast('Filtro de período em desenvolvimento');
+}
+
 function renderCaixa() {
   const totalDia = historico.reduce((s, c) => s + (c.totalFinal ?? c.total), 0);
+  const fechadas = historico.filter(c => c.status === 'fechada');
+  const ticketMedio = fechadas.length ? totalDia / fechadas.length : 0;
   document.getElementById('stat-total').textContent    = 'R$ ' + totalDia.toFixed(2);
   document.getElementById('stat-fechadas').textContent = historico.length;
   document.getElementById('stat-abertas').textContent  = comandas.filter(c => c.status === 'aberta').length;
+  const ticketEl = document.getElementById('stat-ticket-medio');
+  if (ticketEl) ticketEl.textContent = 'R$ ' + ticketMedio.toFixed(2);
 
   // F6 — breakdown por forma de pagamento
   const porPagamento = {};
@@ -1360,7 +1416,8 @@ function renderRelatorios() {
   const topByVolume = Object.entries(productStats).sort((a, b) => b[1].qty - a[1].qty)[0];
   document.getElementById('stat-top-produto').textContent = topByVolume ? topByVolume[0] : '--';
   const avgMinutes = minutesCount ? Math.round(minutesTotal / minutesCount) : 0;
-  document.getElementById('stat-media-tempo').textContent = avgMinutes ? `${avgMinutes} min` : '--';
+  const mediaTempoEl = document.getElementById('stat-media-tempo') || document.getElementById('stat-ticket-medio');
+  if (mediaTempoEl) mediaTempoEl.textContent = avgMinutes ? `${avgMinutes} min` : '--';
 
   const relPico = document.getElementById('relatorio-pico');
   relPico.innerHTML = Object.entries(histogram)
