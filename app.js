@@ -262,7 +262,7 @@ function showPage(page, el) {
   }
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sidebar-nav .tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
   if (el) el.classList.add('active');
 
@@ -658,8 +658,11 @@ function renderProdutosComanda() {
 
   grid.innerHTML = produtosFiltrados.map(produto => `
     <div class="produto-card" onclick="adicionarProdutoComanda(${produto.id})">
-      <div class="produto-card-header">${produto.nome}</div>
-      <div class="produto-card-price">R$ ${produto.preco.toFixed(2)}</div>
+      <div class="produto-card-info">
+        <div class="produto-card-nome">${produto.nome}</div>
+        <div class="produto-card-price">R$ ${produto.preco.toFixed(2)}</div>
+      </div>
+      <div class="produto-card-add">＋</div>
     </div>
   `).join('');
 }
@@ -747,43 +750,45 @@ function renderComandas() {
     <div class="comanda-card">
       <div class="comanda-header">
         <div class="comanda-info">
-          <h3>Mesa ${c.mesa || c.nome}</h3>
+          <h3 style="color:var(--text-main);">Mesa ${c.mesa || c.nome}</h3>
           <div class="comanda-meta">
             <span>${c.nome}</span>
             <span>·</span>
             <span>${c.hora || '--'}</span>
-            <span>·</span>
-            <span>${c.itens.length} item${c.itens.length !== 1 ? 's' : ''}</span>
             ${c.operador ? `<span>· Atend: ${c.operador}</span>` : ''}
           </div>
         </div>
-        <span class="badge badge-open">Aberta</span>
+        <span class="badge badge-info">${c.itens.length} item${c.itens.length !== 1 ? 's' : ''}</span>
       </div>
       <div class="comanda-body">
         <div class="comanda-items">
           ${c.itens.map((item, i) => `
-            <div class="comanda-item-row">
-              <div class="comanda-item-main">
-                <div class="comanda-item-info">
-                  <span class="comanda-item-qty">${item.qty}×</span>
-                  <span class="comanda-item-nome">${item.nome}</span>
-                </div>
-                <span class="comanda-item-price">R$ ${(item.preco * item.qty).toFixed(2)}</span>
-                <div class="comanda-item-actions">
-                  <button class="btn btn-ghost btn-sm" onclick="abrirEdicaoItem(${c.id},${i})" title="Editar">✏️</button>
-                  ${isGerente() ? `<button class="btn btn-danger btn-sm" onclick="removerItemDaComanda(${c.id},${i})" title="Excluir">×</button>` : ''}
+            <div class="comanda-item-row" style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed var(--card-border);">
+              <div style="display:flex; align-items:center; flex:1; gap:10px;">
+                <span style="font-weight:800; font-size:12px; color:var(--text-main); background:var(--gold-light); padding:4px 8px; border-radius:6px;">${item.qty}x</span>
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                  <span style="font-weight:700; font-size:13px; color:var(--text-main);">${item.nome}</span>
+                  ${item.nota ? `<span style="font-size:11px; color:var(--text-dim); font-style:italic;">${item.nota}</span>` : ''}
                 </div>
               </div>
-              ${item.nota ? `<div class="comanda-item-note">${item.nota}</div>` : ''}
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-weight:800; font-size:13px; color:var(--text-main);">R$ ${(item.preco * item.qty).toFixed(2)}</span>
+                <div style="display:flex; gap:4px;">
+                  <button class="btn btn-ghost btn-sm" onclick="abrirEdicaoItem(${c.id},${i})" title="Editar" style="padding:4px 8px; border:none; background:rgba(0,0,0,0.03);">✏️</button>
+                  ${isGerente() ? `<button class="btn btn-ghost btn-sm" onclick="removerItemDaComanda(${c.id},${i})" title="Excluir" style="padding:4px 8px; border:none; background:rgba(239,68,68,0.1); color:var(--red);">🗑</button>` : ''}
+                </div>
+              </div>
             </div>
           `).join('')}
         </div>
         <div class="comanda-footer">
-          <span class="comanda-total">Total consumido: R$ ${c.total.toFixed(2)}</span>
-          <div class="comanda-actions">
-            <button class="btn btn-ghost btn-sm" onclick="iniciarDivisao(${c.id})">Dividir</button>
-            <button class="btn btn-danger btn-sm" onclick="cancelarComanda(${c.id})">Cancelar</button>
-            <button class="btn btn-success btn-sm" onclick="iniciarFechamento(${c.id})">Pagar</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase;">Total Comanda</span>
+            <span style="font-weight:800; font-size:22px; color:var(--gold);">R$ ${c.total.toFixed(2)}</span>
+          </div>
+          <div class="comanda-actions" style="display:flex; gap:8px;">
+            <button class="btn btn-ghost btn-sm" onclick="cancelarComanda(${c.id})" style="flex:1; border:none; background:rgba(0,0,0,0.03); color:var(--text-main);">Cancelar</button>
+            <button class="btn btn-gold btn-sm" onclick="iniciarFechamento(${c.id})" style="flex:2; font-size:14px;">Cobrar Conta</button>
           </div>
         </div>
       </div>
