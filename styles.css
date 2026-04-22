@@ -5,36 +5,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Paleta Base (Modern Light/Warm) */
-  --bg-app: #F5F3ED;
-  /* Fundo creme bem suave */
-  --bg-sidebar: #1C1917;
-  /* Dark espresso intenso */
-  --bg-card: #FFFFFF;
-  --card-border: rgba(220, 215, 205, 0.6);
+  /* Paleta Base (Identidade da Marca) */
+  --bg-app: #f5f0e4;
+  --bg-sidebar: #2c1a0e;
+  --bg-card: #ffffff;
+  --card-border: #e0d5bd;
 
   /* Textos */
-  --text-main: #292524;
-  --text-dim: #78716C;
-  --text-sidebar: #A8A29E;
-  --text-sidebar-active: #FFFFFF;
+  --text-main: #1a0f06;
+  --text-dim: #7a6040;
+  --text-sidebar: #d4c4a0;
+  --text-sidebar-active: #ffffff;
 
   /* Cores de Ação */
-  --gold: #D4AF37;
-  --gold-hover: #C5A028;
-  --gold-light: rgba(212, 175, 55, 0.15);
+  --gold: #c9a84c;
+  --gold-hover: #b59640;
+  --gold-light: #fdf7ea;
 
-  --primary: #44403C;
-  --primary-hover: #292524;
+  --primary: #3d2410;
+  --primary-hover: #2c1a0e;
 
   /* Status */
-  --green: #10B981;
-  --green-bg: rgba(16, 185, 129, 0.1);
-  --red: #EF4444;
-  --red-bg: rgba(239, 68, 68, 0.1);
+  --green: #2d6b3f;
+  --green-bg: #e0f2e5;
+  --red: #9a2020;
+  --red-bg: #fce8e8;
   --blue: #3B82F6;
   --blue-bg: rgba(59, 130, 246, 0.1);
-  --orange: #F59E0B;
+  --orange: #f59e0b;
   --orange-bg: rgba(245, 158, 11, 0.1);
 
   /* Aliases de Compatibilidade (usados no JS) */
@@ -42,9 +40,9 @@
   --border-light: var(--card-border);
 
   /* Sombras e Efeitos */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 3px rgba(44,26,14,0.06), 0 2px 6px rgba(44,26,14,0.03);
+  --shadow-md: 0 2px 8px rgba(44,26,14,0.08), 0 4px 16px rgba(44,26,14,0.04);
+  --shadow-lg: 0 8px 24px rgba(44,26,14,0.12), 0 12px 32px rgba(44,26,14,0.06);
 
   --radius-sm: 8px;
   --radius-md: 16px;
