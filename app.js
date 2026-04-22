@@ -1041,6 +1041,13 @@ async function salvarEdicaoItem() {
 
 // =================== FECHAMENTO DE COMANDA ===================
 function iniciarFechamento(id) {
+  if (!caixaHoje || caixaHoje.status !== 'aberto') {
+    const msg = !caixaHoje
+      ? 'Abra o caixa antes de concluir uma venda.'
+      : 'Caixa encerrado. Um novo caixa precisa ser aberto.';
+    return showToast(msg, 'error');
+  }
+
   comandaParaFechar = comandas.find(c => c.id === id);
   if (!comandaParaFechar) return;
   document.getElementById('modal-desc').textContent = comandaParaFechar.nome + ' · Mesa ' + comandaParaFechar.mesa;

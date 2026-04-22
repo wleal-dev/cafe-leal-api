@@ -180,6 +180,15 @@ router.post('/:id/fechar', async (req, res) => {
     const comanda = await fetchComanda(req.params.id, client);
     if (!comanda) return res.status(404).json({ error: 'Comanda não encontrada' });
 
+    // Exige caixa aberto
+    const { rows: caixaRows } = await client.query(
+      `SELECT id FROM caixas WHERE data = CURRENT_DATE AND status = 'aberto' LIMIT 1`
+    );
+    if (!caixaRows.length) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'Nenhum caixa aberto. Abra o caixa antes de concluir uma venda.' });
+    }
+
     const { desconto = 0, descontoPercentual = 0, totalFinal, formaPagamento, operadorFechamento = '' } = req.body;
     if (!formaPagamento) return res.status(400).json({ error: 'Forma de pagamento obrigatória' });
 
