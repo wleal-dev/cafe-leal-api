@@ -264,6 +264,8 @@ body {
   width: 100px;
   height: 100px;
   object-fit: contain;
+  /* Converte preto → dourado (#c9a84c) */
+  filter: invert(1) sepia(1) saturate(4) hue-rotate(5deg) brightness(0.85);
 }
 
 .sidebar-logo-name {
