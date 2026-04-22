@@ -120,30 +120,31 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(28, 25, 23, 0.85);
+  background: rgba(44, 26, 14, 0.88);
   backdrop-filter: blur(8px);
 }
 
 .login-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 248, 235, 0.06);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(201, 168, 76, 0.2);
   padding: 3rem 2.5rem;
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 400px;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 8px 40px rgba(44, 26, 14, 0.4);
   text-align: center;
 }
 
 .login-logo {
   width: 100%;
   height: auto;
-  max-height: 200px;
+  max-height: 150px;
   object-fit: contain;
   display: block;
   margin-bottom: 2rem;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(38%) saturate(380%) hue-rotate(8deg) brightness(78%);
 }
 
 .login-title {
@@ -168,7 +169,7 @@ body {
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: #D6D3D1;
+  color: #d4c4a0;
   margin-bottom: 8px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -178,8 +179,8 @@ body {
   width: 100%;
   padding: 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 248, 235, 0.08);
+  border: 1px solid rgba(201, 168, 76, 0.25);
   color: #FFF;
   font-size: 15px;
   outline: none;
@@ -188,7 +189,8 @@ body {
 
 .login-field input:focus {
   border-color: var(--gold);
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(201, 168, 76, 0.1);
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
 }
 
 .login-btn {
@@ -197,7 +199,7 @@ body {
   margin-top: 10px;
   border-radius: 12px;
   background: var(--gold);
-  color: #1C1917;
+  color: #2c1a0e;
   font-weight: 700;
   font-size: 15px;
   border: none;
@@ -208,6 +210,7 @@ body {
 .login-btn:hover {
   background: var(--gold-hover);
   transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(201, 168, 76, 0.35);
 }
 
 .login-error {

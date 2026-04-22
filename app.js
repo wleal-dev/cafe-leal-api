@@ -788,7 +788,7 @@ function renderComandas() {
           </div>
           <div class="comanda-actions" style="display:flex; gap:8px;">
             <button class="btn btn-ghost btn-sm" onclick="cancelarComanda(${c.id})" style="flex:1; border:none; background:rgba(0,0,0,0.03); color:var(--text-main);">Cancelar</button>
-            <button class="btn btn-gold btn-sm" onclick="iniciarFechamento(${c.id})" style="flex:2; font-size:14px;">Cobrar Conta</button>
+            <button class="btn btn-gold btn-sm" onclick="iniciarFechamento(${c.id})" style="flex:2; font-size:14px;">Fechar Comanda</button>
           </div>
         </div>
       </div>

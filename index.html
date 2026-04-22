@@ -122,7 +122,7 @@
                 <span class="order-total-label">Total</span>
                 <span class="order-total-value" id="total-display">R$ 0,00</span>
               </div>
-              <button class="btn-cobrar" onclick="abrirComanda()">Cobrar</button>
+              <button class="btn-cobrar" onclick="abrirComanda()">Abrir Comanda</button>
             </div>
           </div>
         </div>
@@ -139,7 +139,7 @@
         <div class="toolbar">
           <input type="text" id="filtro-comandas" placeholder="Buscar por mesa ou cliente..." onkeyup="filtrarComandas()" style="max-width:320px;">
         </div>
-        <div id="lista-comandas">
+        <div id="lista-comandas" style="margin-top: 1.5rem;">
           <div class="empty-state-full">
             <div class="empty-icon">☕</div>
             <div class="empty-title">Nenhuma comanda aberta</div>
@@ -338,7 +338,7 @@
 
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="fecharModal()">Cancelar</button>
-        <button class="btn btn-success" onclick="confirmarFechamento()">✓ Confirmar</button>
+        <button class="btn btn-gold" onclick="confirmarFechamento()">✓ Confirmar</button>
       </div>
     </div>
   </div>
@@ -364,7 +364,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="fecharSplitModal()">Cancelar</button>
-        <button class="btn btn-success" id="split-confirm-btn" onclick="confirmarSplit()">Aplicar divisão</button>
+        <button class="btn btn-gold" id="split-confirm-btn" onclick="confirmarSplit()">Aplicar divisão</button>
       </div>
     </div>
   </div>
@@ -383,7 +383,7 @@
       <div class="form-group"><label>Observações</label><input type="text" id="edit-item-nota" placeholder="Ex: Sem açúcar, leite de aveia"></div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="fecharEdicaoItem()">Cancelar</button>
-        <button class="btn btn-success" onclick="salvarEdicaoItem()">Salvar</button>
+        <button class="btn btn-gold" onclick="salvarEdicaoItem()">Salvar</button>
       </div>
     </div>
   </div>
@@ -452,7 +452,7 @@
       <div class="form-group"><label>Categoria</label><select id="edit-prod-categoria"></select></div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="document.getElementById('modal-editar-produto').classList.remove('open')">Cancelar</button>
-        <button class="btn btn-success" onclick="salvarEdicaoProduto()">Salvar</button>
+        <button class="btn btn-gold" onclick="salvarEdicaoProduto()">Salvar</button>
       </div>
     </div>
   </div>
@@ -474,7 +474,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="document.getElementById('modal-novo-produto').classList.remove('open')">Cancelar</button>
-        <button class="btn btn-success" onclick="adicionarProduto()">＋ Cadastrar</button>
+        <button class="btn btn-gold" onclick="adicionarProduto()">＋ Cadastrar</button>
       </div>
     </div>
   </div>
@@ -490,7 +490,7 @@
       <div class="form-group"><label>Tipo</label><select id="edit-forn-tipo"><option>Mercado</option><option>Fornecedor</option><option>Outro</option></select></div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="document.getElementById('modal-editar-fornecedor').classList.remove('open')">Cancelar</button>
-        <button class="btn btn-success" onclick="salvarEdicaoFornecedor()">Salvar</button>
+        <button class="btn btn-gold" onclick="salvarEdicaoFornecedor()">Salvar</button>
       </div>
     </div>
   </div>
@@ -517,7 +517,7 @@
       <div class="form-group"><label>Forma de pagamento</label><select id="edit-compra-pagamento"><option>Dinheiro</option><option>Débito</option><option>Crédito</option><option>Pix</option></select></div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="document.getElementById('modal-editar-compra').classList.remove('open')">Cancelar</button>
-        <button class="btn btn-success" onclick="salvarEdicaoCompra()">Salvar</button>
+        <button class="btn btn-gold" onclick="salvarEdicaoCompra()">Salvar</button>
       </div>
     </div>
   </div>
@@ -533,7 +533,7 @@
       </div>
       <div id="lista-categorias-gerenciar" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
       <div class="modal-actions">
-        <button class="btn btn-success" onclick="document.getElementById('modal-gerenciar-categorias').classList.remove('open')">Concluir</button>
+        <button class="btn btn-gold" onclick="document.getElementById('modal-gerenciar-categorias').classList.remove('open')">Concluir</button>
       </div>
     </div>
   </div>
