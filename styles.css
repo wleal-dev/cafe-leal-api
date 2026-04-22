@@ -815,67 +815,17 @@ select:focus {
   border-radius: 12px;
 }
 
-.items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 1rem 0;
-  max-height: 40vh;
-  overflow-y: auto;
-}
-
-.item-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  background: var(--bg-app);
-  border-radius: 12px;
-}
-
-.item-row-main {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  gap: 12px;
-}
-
-.item-qty {
-  background: var(--text-main);
-  color: #FFF;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.item-name {
-  flex: 1;
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.item-price {
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.item-remove {
-  background: none;
-  border: none;
-  color: var(--text-dim);
-  font-size: 20px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.item-remove:hover {
-  color: var(--red);
-}
+.items-list { display: flex; flex-direction: column; gap: 8px; margin: 1rem 0; max-height: 40vh; overflow-y: auto; }
+.item-row { display: flex; align-items: flex-start; justify-content: space-between; padding: 12px 0; border-bottom: 1px dashed var(--card-border); gap: 12px; }
+.item-row:last-child { border-bottom: none; }
+.item-qty { background: var(--gold-light); color: var(--gold); min-width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 13px; font-weight: 800; }
+.item-details { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.item-name { font-weight: 700; font-size: 14px; color: var(--text-main); }
+.item-note-text { font-size: 11px; color: var(--text-dim); font-style: italic; }
+.item-price-col { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.item-price { font-weight: 800; font-size: 14px; color: var(--text-main); }
+.item-remove { background: rgba(239, 68, 68, 0.1); border: none; color: var(--red); width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; transition: 0.2s; }
+.item-remove:hover { background: var(--red); color: #FFF; }
 
 .order-receipt-footer {
   border-top: 2px dashed var(--card-border);
@@ -1248,40 +1198,8 @@ select:focus {
   color: var(--red) !important;
 }
 
-/* Tabs de Compras */  .compras-tab  {
-   display:  flex;
-   gap:  8px;
-   border-bottom:  1px solid var(--card-border);
-   padding-bottom:  8px;
-   
-}
-
-  .compras-tab .tab  {
-   padding:  8px 16px;
-   background:  none;
-   border:  none;
-   font-size:  14px;
-   font-weight:  500;
-   color:  var(--text-dim);
-   cursor:  pointer;
-   border-radius:  var(--radius-sm);
-   transition:  0.2s;
-   
-}
-
-  .compras-tab .tab:hover  {
-   background:  var(--bg-sidebar);
-   color:  var(--text-main);
-   
-}
-
-  .compras-tab .tab.active  {
-   background:  #FFF;
-   color:  var(--gold);
-   border:  1px solid var(--card-border);
-   box-shadow:  var(--shadow-sm);
-   font-weight:  600;
-   
-}
-
-  
+/* Tabs de Compras */
+.compras-tab { display: flex; gap: 24px; border-bottom: 2px solid var(--card-border); padding-bottom: 0; margin-bottom: 24px; }
+.compras-tab .tab { padding: 12px 4px; background: none; border: none; font-size: 15px; font-weight: 700; color: var(--text-dim); cursor: pointer; transition: 0.2s; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+.compras-tab .tab:hover { color: var(--text-main); }
+.compras-tab .tab.active { color: var(--text-main); border-bottom-color: var(--gold); }

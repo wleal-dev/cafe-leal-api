@@ -611,14 +611,16 @@ function renderItems() {
   }
   list.innerHTML = itensComanda.map((item, i) => `
     <div class="item-row">
-      <div class="item-row-main">
-        <span class="item-name">${item.nome}</span>
-        <span class="item-qty">x${item.qty}</span>
+      <div class="item-qty">${item.qty}x</div>
+      <div class="item-details">
+        <div class="item-name">${item.nome}</div>
+        ${item.nota ? `<div class="item-note-text">${item.nota}</div>` : ''}
+        <button class="item-edit" onclick="editarItemNota(${i})" style="background:none; border:none; cursor:pointer; font-size:11px; text-align:left; padding:0; color:var(--text-dim); text-decoration:underline;">+ Nota</button>
+      </div>
+      <div class="item-price-col">
         <span class="item-price">R$ ${(item.preco * item.qty).toFixed(2)}</span>
-        <button class="item-edit" onclick="editarItemNota(${i})" title="Editar observação" style="background:none; border:none; cursor:pointer; font-size:14px; padding:2px 5px; border-radius:4px; color:var(--text-muted);">✏️</button>
         <button class="item-remove" onclick="removeItem(${i})" title="Remover">×</button>
       </div>
-      ${item.nota ? `<div class="item-note-text">${item.nota}</div>` : ''}
     </div>
   `).join('');
   document.getElementById('total-display').textContent = 'R$ ' + total.toFixed(2);
