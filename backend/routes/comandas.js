@@ -184,8 +184,8 @@ router.post('/:id/fechar', async (req, res) => {
     if (!formaPagamento) return res.status(400).json({ error: 'Forma de pagamento obrigatória' });
 
     const agora = new Date();
-    const horaFechamento = agora.toTimeString().slice(0, 5);
-    const dataFechamento = agora.toLocaleDateString('pt-BR');
+    const horaFechamento = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+    const dataFechamento = agora.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
     // Inserir no histórico
     const { rows: histRows } = await client.query(
@@ -240,8 +240,8 @@ router.post('/:id/cancelar', async (req, res) => {
 
     const { operadorFechamento = '' } = req.body || {};
     const agora = new Date();
-    const horaFechamento = agora.toTimeString().slice(0, 5);
-    const dataFechamento = agora.toLocaleDateString('pt-BR');
+    const horaFechamento = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
+    const dataFechamento = agora.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
     const { rows: histRows } = await client.query(
       `INSERT INTO historico

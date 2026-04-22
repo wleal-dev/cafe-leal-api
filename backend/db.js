@@ -16,4 +16,9 @@ const pool = new Pool({
   connectionTimeoutMillis: 5000,
 });
 
+// Garante que todas as conexões usem horário de Brasília
+pool.on('connect', (client) => {
+  client.query("SET timezone = 'America/Sao_Paulo'");
+});
+
 module.exports = pool;
