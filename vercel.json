@@ -5,7 +5,7 @@
     { "src": "index.html",        "use": "@vercel/static" },
     { "src": "app.js",            "use": "@vercel/static" },
     { "src": "styles.css",        "use": "@vercel/static" },
-    { "src": "logo.png",          "use": "@vercel/static" }
+    { "src": "IconeCafeLeal.png", "use": "@vercel/static" }
   ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/backend/server.js" },
