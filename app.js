@@ -1499,7 +1499,19 @@ function renderCaixa() {
                 <span style="color:var(--text-muted);">↑ ${c.operador || '--'}</span><br>
                 <span style="color:var(--text-main); font-weight:600;">↓ ${c.operadorFechamento || '--'}</span>
               </td>
-            </tr>`;
+            </tr>
+            ${Array.isArray(c.itens) && c.itens.length ? `
+            <tr>
+              <td colspan="6" style="padding:0 12px 10px; border-top:none;">
+                <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                  ${c.itens.map(it => `
+                    <span style="font-size:11px; background:var(--bg-app); border:1px solid var(--border);
+                                 border-radius:20px; padding:2px 10px; color:var(--text-muted); white-space:nowrap;">
+                      ${it.qty}× ${it.nome}
+                    </span>`).join('')}
+                </div>
+              </td>
+            </tr>` : ''}`;
         }).join('')}
       </tbody>
     </table>`;
