@@ -1479,7 +1479,7 @@ function renderCaixa() {
           <th>Cliente</th>
           <th>Total</th>
           <th>Pagamento</th>
-          <th>Atendente</th>
+          <th>Abriu / Fechou</th>
         </tr>
       </thead>
       <tbody>
@@ -1495,7 +1495,10 @@ function renderCaixa() {
               <td style="font-weight:600;">${c.nome}</td>
               <td style="font-weight:700; color:var(--green);">R$ ${valor}</td>
               <td>${pagBadge}</td>
-              <td style="color:var(--text-muted);">${c.operadorFechamento || c.operador || '--'}</td>
+              <td style="font-size:12px; line-height:1.6;">
+                <span style="color:var(--text-muted);">↑ ${c.operador || '--'}</span><br>
+                <span style="color:var(--text-main); font-weight:600;">↓ ${c.operadorFechamento || '--'}</span>
+              </td>
             </tr>`;
         }).join('')}
       </tbody>
