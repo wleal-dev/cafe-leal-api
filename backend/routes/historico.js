@@ -15,6 +15,7 @@ router.get('/', async (req, res) => {
          h.desconto_percentual AS "descontoPercentual",
          h.total_final         AS "totalFinal",
          h.forma_pagamento     AS "formaPagamento",
+         h.operador_fechamento AS "operadorFechamento",
          COALESCE(
            json_agg(
              json_build_object(
