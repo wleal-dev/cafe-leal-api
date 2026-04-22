@@ -1543,6 +1543,7 @@ function _renderCaixaBanner() {
         <strong>Caixa fechado às ${horaFech}</strong>
         <span>Por: ${caixaHoje.fechado_por} · Total apurado: R$ ${parseFloat(caixaHoje.total_calculado || 0).toFixed(2)}</span>
       </div>
+      <button class="btn btn-gold" onclick="abrirModalAberturaCaixa()">Abrir novo caixa</button>
     </div>`;
 }
 
