@@ -140,12 +140,10 @@ body {
 .login-logo {
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: 0;
   margin-bottom: 1.5rem;
-  object-fit: cover;
-  background-color: #FFF;
-  border: 2px solid var(--gold);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  object-fit: contain;
+  background: transparent;
 }
 
 .login-title {
@@ -256,10 +254,9 @@ body {
 .sidebar-logo-img {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: #FFF;
-  border: 2px solid var(--gold);
+  border-radius: 0;
+  object-fit: contain;
+  background: transparent;
 }
 
 .sidebar-logo-name {
