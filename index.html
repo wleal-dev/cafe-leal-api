@@ -157,6 +157,8 @@
           </div>
         </div>
 
+        <div id="caixa-status-banner" style="margin-bottom:1rem;"></div>
+
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon stat-icon-green">💰</div>
@@ -539,6 +541,65 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- MODAL: Abertura de Caixa -->
+<div class="modal-overlay" id="modal-abertura-caixa">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <h3>Abrir Caixa</h3>
+      <p>Informe o troco inicial em dinheiro</p>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Troco inicial (R$)</label>
+        <input type="number" id="abertura-valor-inicial" min="0" step="0.01"
+               placeholder="Ex: 200.00"
+               style="width:100%; font-size:18px; margin-top:0.5rem;">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost"
+                onclick="document.getElementById('modal-abertura-caixa').classList.remove('open')">
+          Cancelar
+        </button>
+        <button class="btn btn-gold" onclick="confirmarAberturaCaixa()">Abrir Caixa</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Fechamento de Caixa -->
+<div class="modal-overlay" id="modal-fechamento-caixa">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h3>Fechar Caixa</h3>
+      <p>Confira os totais e informe o valor contado</p>
+    </div>
+    <div class="modal-body">
+      <div id="fechamento-resumo" style="margin-bottom:1.25rem;">
+        <div style="text-align:center; color:var(--text-muted); padding:1rem;">Carregando resumo...</div>
+      </div>
+      <div class="form-group">
+        <label style="font-weight:700; font-size:13px;">Valor contado no caixa físico (R$)</label>
+        <input type="number" id="fechamento-total-contado" min="0" step="0.01"
+               placeholder="Digite o valor físico em caixa"
+               style="width:100%; font-size:18px; margin-top:0.5rem;"
+               oninput="calcularDiferencaFechamento()">
+      </div>
+      <div id="fechamento-diferenca-preview"
+           style="font-size:13px; font-weight:700; margin:0.75rem 0; padding:0.75rem;
+                  border-radius:8px; display:none; text-align:center;">
+        <span id="fechamento-diferenca-valor"></span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost"
+                onclick="document.getElementById('modal-fechamento-caixa').classList.remove('open')">
+          Cancelar
+        </button>
+        <button class="btn btn-danger" onclick="confirmarFechamentoCaixa()">Fechar Caixa</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>

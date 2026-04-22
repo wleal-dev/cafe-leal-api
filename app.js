@@ -62,6 +62,8 @@ let fornecedores = [];
 let saidas       = [];
 let config        = {};
 
+let caixaHoje        = null;
+
 let avulsoLiberado   = false;
 let comandaParaFechar = null;
 let splitMode     = 'equal';
@@ -74,7 +76,7 @@ let filtroComandas = '';
 // =================== CARREGAR DADOS ===================
 async function carregarDados() {
   try {
-    const [_cat, _prod, _cmd, _hist, _comp, _forn, _said, _cfg] = await Promise.all([
+    const [_cat, _prod, _cmd, _hist, _comp, _forn, _said, _cfg, _caixa] = await Promise.all([
       apiFetch('/categorias'),
       apiFetch('/produtos'),
       apiFetch('/comandas'),
@@ -83,6 +85,7 @@ async function carregarDados() {
       apiFetch('/fornecedores'),
       apiFetch('/saidas'),
       apiFetch('/configuracoes'),
+      apiFetch('/caixas/hoje'),
     ]);
     categorias    = _cat   || [];
     produtos      = _prod  || [];
@@ -92,6 +95,7 @@ async function carregarDados() {
     fornecedores  = _forn  || [];
     saidas        = _said  || [];
     config        = _cfg   || {};
+    caixaHoje     = _caixa || null;
   } catch (err) {
     console.error('Erro ao carregar dados:', err);
     showToast('Erro ao conectar com o servidor', 'error');
@@ -276,7 +280,17 @@ function showPage(page, el) {
     inicializarFiltrosCategorias();
     renderProdutosComanda();
   }
-  if (page === 'caixa') { renderCaixa(); renderRelatorios(); }
+  if (page === 'caixa') {
+    apiFetch('/caixas/hoje').then(c => {
+      caixaHoje = c || null;
+      renderCaixa();
+      renderRelatorios();
+    }).catch(() => {
+      renderCaixa();
+      renderRelatorios();
+    });
+    return;
+  }
   if (page === 'produtos') renderProdutos();
   if (page === 'compras') renderCompras();
   if (page === 'financeiro') renderFinanceiro();
@@ -1345,18 +1359,26 @@ function aplicarFiltroPeriodo() {
 }
 
 function renderCaixa() {
-  const totalDia = historico.reduce((s, c) => s + (c.totalFinal ?? c.total), 0);
-  const fechadas = historico.filter(c => c.status === 'fechada');
+  // Filtra historico pelo período do caixa aberto (se houver)
+  let historicoFiltrado = historico;
+  if (caixaHoje && caixaHoje.hora_abertura) {
+    const abertura = new Date(caixaHoje.hora_abertura);
+    historicoFiltrado = historico.filter(c => new Date(c.fechamento) >= abertura);
+  }
+
+  const totalDia    = historicoFiltrado.reduce((s, c) => s + (c.totalFinal ?? c.total), 0);
+  const fechadas    = historicoFiltrado.filter(c => c.status === 'fechada');
   const ticketMedio = fechadas.length ? totalDia / fechadas.length : 0;
+
   document.getElementById('stat-total').textContent    = 'R$ ' + totalDia.toFixed(2);
-  document.getElementById('stat-fechadas').textContent = historico.length;
+  document.getElementById('stat-fechadas').textContent = historicoFiltrado.length;
   document.getElementById('stat-abertas').textContent  = comandas.filter(c => c.status === 'aberta').length;
   const ticketEl = document.getElementById('stat-ticket-medio');
   if (ticketEl) ticketEl.textContent = 'R$ ' + ticketMedio.toFixed(2);
 
-  // F6 — breakdown por forma de pagamento
+  // Breakdown por forma de pagamento (do caixa atual)
   const porPagamento = {};
-  historico.filter(c => c.status === 'fechada').forEach(c => {
+  historicoFiltrado.filter(c => c.status === 'fechada').forEach(c => {
     const p = c.formaPagamento || 'Outros';
     porPagamento[p] = (porPagamento[p] || 0) + (c.totalFinal ?? c.total);
   });
@@ -1371,13 +1393,15 @@ function renderCaixa() {
       : '<span style="font-size:13px; color:var(--text-muted);">Nenhuma venda ainda</span>';
   }
 
-  // Atualiza resumo lateral
   const totalResumo = document.getElementById('stat-total-resumo');
   if (totalResumo) totalResumo.textContent = 'R$ ' + totalDia.toFixed(2);
 
+  // Renderiza banner de status do caixa
+  _renderCaixaBanner();
+
   const list = document.getElementById('historico-list');
-  if (!historico.length) {
-    list.innerHTML = '<div class="empty-state">Nenhuma comanda fechada hoje</div>';
+  if (!historicoFiltrado.length) {
+    list.innerHTML = '<div class="empty-state">Nenhuma comanda fechada neste caixa</div>';
     updateAccessControls();
     return;
   }
@@ -1395,7 +1419,7 @@ function renderCaixa() {
         </tr>
       </thead>
       <tbody>
-        ${[...historico].reverse().map(c => {
+        ${[...historicoFiltrado].reverse().map(c => {
           const valor = (c.totalFinal ?? c.total).toFixed(2);
           const cls = _badgeClass(c.formaPagamento);
           const pagBadge = c.formaPagamento
@@ -1416,9 +1440,224 @@ function renderCaixa() {
   updateAccessControls();
 }
 
+function _renderCaixaBanner() {
+  const banner = document.getElementById('caixa-status-banner');
+  if (!banner) return;
+
+  if (!caixaHoje) {
+    banner.innerHTML = `
+      <div class="caixa-banner caixa-banner-fechado">
+        <div>
+          <strong>Caixa não aberto</strong>
+          <span>Abra o caixa para registrar o início do expediente</span>
+        </div>
+        <button class="btn btn-gold" onclick="abrirModalAberturaCaixa()">Abrir Caixa</button>
+      </div>`;
+    return;
+  }
+
+  if (caixaHoje.status === 'aberto') {
+    const horaAb = new Date(caixaHoje.hora_abertura)
+      .toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    banner.innerHTML = `
+      <div class="caixa-banner caixa-banner-aberto">
+        <div>
+          <strong>Caixa aberto</strong>
+          <span>Abertura: ${horaAb} · Troco inicial: R$ ${parseFloat(caixaHoje.valor_inicial).toFixed(2)} · Aberto por: ${caixaHoje.aberto_por}</span>
+        </div>
+        ${isGerente() ? '<button class="btn btn-danger" onclick="abrirModalFechamentoCaixa()">Fechar Caixa</button>' : ''}
+      </div>`;
+    return;
+  }
+
+  // status === 'fechado'
+  const horaFech = new Date(caixaHoje.hora_fechamento)
+    .toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  banner.innerHTML = `
+    <div class="caixa-banner caixa-banner-fechado">
+      <div>
+        <strong>Caixa fechado às ${horaFech}</strong>
+        <span>Por: ${caixaHoje.fechado_por} · Total apurado: R$ ${parseFloat(caixaHoje.total_calculado || 0).toFixed(2)}</span>
+      </div>
+    </div>`;
+}
+
 function _badgeClass(forma) {
   const map = { 'Pix': 'badge-pix', 'Dinheiro': 'badge-dinheiro', 'Débito': 'badge-cartao', 'Crédito': 'badge-cartao', 'Cancelada': 'badge-cancelada' };
   return map[forma] || 'badge-info';
+}
+
+// =================== CAIXA — ABERTURA ===================
+
+function abrirModalAberturaCaixa() {
+  const input = document.getElementById('abertura-valor-inicial');
+  if (input) input.value = '';
+  document.getElementById('modal-abertura-caixa').classList.add('open');
+}
+
+async function confirmarAberturaCaixa() {
+  const valorStr = document.getElementById('abertura-valor-inicial').value;
+  const valorInicial = parseFloat(valorStr) || 0;
+  try {
+    const novoCaixa = await apiFetch('/caixas/abrir', {
+      method: 'POST',
+      body: { valorInicial },
+    });
+    caixaHoje = novoCaixa;
+    document.getElementById('modal-abertura-caixa').classList.remove('open');
+    renderCaixa();
+    showToast('Caixa aberto com troco de R$ ' + valorInicial.toFixed(2), 'success');
+  } catch (err) {
+    showToast('Erro ao abrir caixa: ' + err.message, 'error');
+  }
+}
+
+// =================== CAIXA — FECHAMENTO ===================
+
+let _resumoFechamento = null;
+
+async function abrirModalFechamentoCaixa() {
+  if (!isGerente()) return showToast('Apenas o Gerente pode fechar o caixa', 'error');
+  _resumoFechamento = null;
+  const contadoEl = document.getElementById('fechamento-total-contado');
+  if (contadoEl) contadoEl.value = '';
+  const prevEl = document.getElementById('fechamento-diferenca-preview');
+  if (prevEl) prevEl.style.display = 'none';
+  document.getElementById('fechamento-resumo').innerHTML =
+    '<div style="text-align:center; color:var(--text-muted); padding:1rem;">Carregando resumo...</div>';
+  document.getElementById('modal-fechamento-caixa').classList.add('open');
+
+  try {
+    _resumoFechamento = await apiFetch('/caixas/resumo');
+    _renderResumoFechamento(_resumoFechamento);
+  } catch (err) {
+    document.getElementById('fechamento-resumo').innerHTML =
+      `<div style="color:var(--red); padding:0.5rem;">Erro: ${err.message}</div>`;
+  }
+}
+
+function _renderResumoFechamento(data) {
+  const { caixa, totais } = data;
+  const vi = parseFloat(caixa.valor_inicial);
+  const td = parseFloat(totais.total_dinheiro);
+  const esperado = vi + td;
+  document.getElementById('fechamento-resumo').innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:0;">
+      <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px;">
+        <span>Troco inicial</span><strong>R$ ${vi.toFixed(2)}</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px;">
+        <span>Vendas em Dinheiro</span><strong>R$ ${parseFloat(totais.total_dinheiro).toFixed(2)}</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px;">
+        <span>Vendas em Pix</span><strong>R$ ${parseFloat(totais.total_pix).toFixed(2)}</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px;">
+        <span>Vendas em Débito</span><strong>R$ ${parseFloat(totais.total_debito).toFixed(2)}</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px;">
+        <span>Vendas em Crédito</span><strong>R$ ${parseFloat(totais.total_credito).toFixed(2)}</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; padding:9px 0; font-size:14px;">
+        <span style="font-weight:700;">Total geral vendido</span>
+        <strong style="color:var(--green);">R$ ${parseFloat(totais.total_calculado).toFixed(2)}</strong>
+      </div>
+      <div style="background:var(--bg-app); border-radius:8px; padding:10px; font-size:12px; color:var(--text-muted); margin-top:4px;">
+        Esperado no caixa físico (troco + dinheiro): <strong style="color:var(--text);">R$ ${esperado.toFixed(2)}</strong>
+      </div>
+    </div>`;
+}
+
+function calcularDiferencaFechamento() {
+  if (!_resumoFechamento) return;
+  const totalContado = parseFloat(document.getElementById('fechamento-total-contado').value) || 0;
+  const { caixa, totais } = _resumoFechamento;
+  const esperado  = parseFloat(caixa.valor_inicial) + parseFloat(totais.total_dinheiro);
+  const diferenca = esperado - totalContado;
+
+  const prevEl  = document.getElementById('fechamento-diferenca-preview');
+  const valorEl = document.getElementById('fechamento-diferenca-valor');
+  prevEl.style.display = 'block';
+
+  if (Math.abs(diferenca) < 0.01) {
+    prevEl.style.background = 'rgba(34,197,94,0.12)';
+    prevEl.style.color = 'var(--green)';
+    valorEl.textContent = 'Caixa conferido ✓';
+  } else if (diferenca > 0) {
+    prevEl.style.background = 'rgba(239,68,68,0.10)';
+    prevEl.style.color = '#ef4444';
+    valorEl.textContent = 'Falta R$ ' + diferenca.toFixed(2);
+  } else {
+    prevEl.style.background = 'rgba(234,179,8,0.12)';
+    prevEl.style.color = '#ca8a04';
+    valorEl.textContent = 'Sobra R$ ' + Math.abs(diferenca).toFixed(2);
+  }
+}
+
+async function confirmarFechamentoCaixa() {
+  if (!isGerente()) return;
+  const totalContadoStr = document.getElementById('fechamento-total-contado').value;
+  if (!totalContadoStr) return showToast('Informe o valor contado no caixa', 'error');
+  const totalContado = parseFloat(totalContadoStr);
+  try {
+    const caixaFechado = await apiFetch('/caixas/fechar', {
+      method: 'POST',
+      body: { totalContado },
+    });
+    caixaHoje = caixaFechado;
+    _resumoFechamento = null;
+    document.getElementById('modal-fechamento-caixa').classList.remove('open');
+    renderCaixa();
+    showToast('Caixa fechado com sucesso!', 'success');
+    _imprimirReciboCaixa(caixaFechado);
+  } catch (err) {
+    showToast('Erro ao fechar caixa: ' + err.message, 'error');
+  }
+}
+
+function _imprimirReciboCaixa(caixa) {
+  const horaAb   = new Date(caixa.hora_abertura).toLocaleString('pt-BR');
+  const horaFech = new Date(caixa.hora_fechamento).toLocaleString('pt-BR');
+  const diff = parseFloat(caixa.diferenca);
+  const situacao = Math.abs(diff) < 0.01
+    ? 'Caixa conferido'
+    : diff > 0
+      ? 'Falta R$ ' + diff.toFixed(2)
+      : 'Sobra R$ ' + Math.abs(diff).toFixed(2);
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head>
+    <meta charset="UTF-8"><title>Fechamento de Caixa</title>
+    <style>
+      body{font-family:monospace;font-size:13px;max-width:340px;margin:0 auto;padding:20px;}
+      h2,h3{text-align:center;margin:4px 0;}
+      hr{border:none;border-top:1px dashed #000;margin:10px 0;}
+      .row{display:flex;justify-content:space-between;margin:5px 0;}
+      .bold{font-weight:700;}
+    </style>
+  </head><body>
+    <h2>CAFÉ LEAL</h2>
+    <h3>FECHAMENTO DE CAIXA</h3>
+    <hr>
+    <div class="row"><span>Abertura:</span><span>${horaAb}</span></div>
+    <div class="row"><span>Fechamento:</span><span>${horaFech}</span></div>
+    <div class="row"><span>Aberto por:</span><span>${caixa.aberto_por}</span></div>
+    <div class="row"><span>Fechado por:</span><span>${caixa.fechado_por}</span></div>
+    <hr>
+    <div class="row"><span>Troco inicial:</span><span>R$ ${parseFloat(caixa.valor_inicial).toFixed(2)}</span></div>
+    <div class="row"><span>Dinheiro:</span><span>R$ ${parseFloat(caixa.total_dinheiro||0).toFixed(2)}</span></div>
+    <div class="row"><span>Pix:</span><span>R$ ${parseFloat(caixa.total_pix||0).toFixed(2)}</span></div>
+    <div class="row"><span>Débito:</span><span>R$ ${parseFloat(caixa.total_debito||0).toFixed(2)}</span></div>
+    <div class="row"><span>Crédito:</span><span>R$ ${parseFloat(caixa.total_credito||0).toFixed(2)}</span></div>
+    <hr>
+    <div class="row bold"><span>Total vendido:</span><span>R$ ${parseFloat(caixa.total_calculado||0).toFixed(2)}</span></div>
+    <div class="row"><span>Contado no caixa:</span><span>R$ ${parseFloat(caixa.total_contado||0).toFixed(2)}</span></div>
+    <div class="row bold"><span>Situação:</span><span>${situacao}</span></div>
+    <hr>
+    <p style="text-align:center;font-size:11px;">Gerado em ${new Date().toLocaleString('pt-BR')}</p>
+  </body></html>`;
+
+  const win = window.open('', '_blank', 'width=420,height=620');
+  if (win) { win.document.write(html); win.document.close(); win.print(); }
 }
 
 // =================== RELATÓRIOS ===================

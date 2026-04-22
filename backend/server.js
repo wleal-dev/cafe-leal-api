@@ -15,6 +15,7 @@ const rotasCompras   = require('./routes/compras');
 const rotasSaidas    = require('./routes/saidas');
 const rotasConfiguracoes = require('./routes/configuracoes');
 const rotasBackup        = require('./routes/backup');
+const rotasCaixas        = require('./routes/caixas');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -40,6 +41,7 @@ app.use('/api/compras',       auth, rotasCompras);
 app.use('/api/saidas',        auth, rotasSaidas);
 app.use('/api/configuracoes', auth, rotasConfiguracoes);
 app.use('/api/backup',       auth, rotasBackup);
+app.use('/api/caixas',       auth, rotasCaixas);
 
 // Fallback → SPA (qualquer rota não-API devolve index.html)
 app.get('*', (req, res) => {
