@@ -1305,4 +1305,16 @@ select:focus {
   .produtos-comanda-grid {
     max-height: 40vh;
   }
+
+  .produtos-table-wrapper,
+  .data-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 12px 10px;
+    font-size: 13px;
+  }
 }
