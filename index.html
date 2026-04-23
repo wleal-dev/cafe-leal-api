@@ -30,7 +30,15 @@
 
 <!-- =================== APP =================== -->
 <div class="app" id="app">
+  <header class="mobile-header" id="mobile-header">
+    <button class="hamburger-btn" id="btn-hamburger" onclick="toggleSidebarMobile()">
+      <span></span><span></span><span></span>
+    </button>
+    <img src="IconeCafeLeal.png" alt="Café Leal" class="mobile-header-logo">
+  </header>
+
   <div class="app-layout">
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebarMobile()"></div>
 
     <!-- SIDEBAR -->
     <aside class="sidebar">

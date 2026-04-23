@@ -246,7 +246,20 @@ document.addEventListener('keydown', (e) => {
 });
 
 // =================== NAVEGAÇÃO ===================
+function toggleSidebarMobile() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('active');
+}
+
 function showPage(page, el) {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sidebar && sidebar.classList.contains('open')) {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+  }
   // Financeiro só acessa compras e financeiro
   if (isFinanceiro() && page !== 'compras' && page !== 'financeiro') {
     showPage('compras', document.getElementById('tab-compras'));
