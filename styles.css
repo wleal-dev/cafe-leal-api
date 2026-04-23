@@ -1317,4 +1317,17 @@ select:focus {
     padding: 12px 10px;
     font-size: 13px;
   }
+
+  .caixa-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  #historico-list {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
