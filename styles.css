@@ -1297,4 +1297,12 @@ select:focus {
     height: 100vh;
     width: 100%;
   }
+
+  .comanda-layout-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .produtos-comanda-grid {
+    max-height: 40vh;
+  }
 }
