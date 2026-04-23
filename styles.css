@@ -1322,6 +1322,10 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .caixa-grid > * {
+    min-width: 0;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
