@@ -124,7 +124,7 @@ router.post('/importar', checkRole('Gerente'), async (req, res) => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('[POST /backup/importar]', err.message);
-    res.status(500).json({ error: 'Erro ao importar backup: ' + err.message });
+    res.status(500).json({ error: 'Erro ao importar backup' });
   } finally {
     client.release();
   }

@@ -1,3 +1,15 @@
+// =================== HTML ESCAPE (V-03) ===================
+// Usar em toda interpolação de dados vindos do banco/usuário dentro de innerHTML.
+function esc(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // =================== API HELPER ===================
 const API_BASE = '/api';
 
@@ -393,10 +405,10 @@ function renderProdutos() {
           ${filtrados.map(p => `
             <tr>
               <td>
-                <span style="font-weight:600; color:var(--text-primary);">${p.nome}</span>
+                <span style="font-weight:600; color:var(--text-primary);">${esc(p.nome)}</span>
               </td>
               <td>
-                <span style="color:var(--text-secondary); font-size:13px;">${p.categoriaNome}</span>
+                <span style="color:var(--text-secondary); font-size:13px;">${esc(p.categoriaNome)}</span>
               </td>
               <td style="font-weight:600;">R$ ${p.preco.toFixed(2)}</td>
               ${acoesCell(p)}
@@ -449,7 +461,7 @@ function renderCategoriasGerenciar() {
   }
   list.innerHTML = categorias.map(c => `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border:1px solid var(--card-border); border-radius:8px;">
-      <span style="font-size:14px; font-weight:500;">${c.nome}</span>
+      <span style="font-size:14px; font-weight:500;">${esc(c.nome)}</span>
       <button class="btn btn-danger btn-sm" onclick="excluirCategoriaList(${c.id})" title="Excluir">🗑️</button>
     </div>
   `).join('');
@@ -526,7 +538,7 @@ function abrirNovoProduto() {
   const select = document.getElementById('produto-categoria');
   if (select) {
     select.innerHTML = '<option value="">Selecione uma categoria</option>' +
-      categorias.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+      categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
   }
   document.getElementById('produto-nome').value = '';
   document.getElementById('produto-preco').value = '';
@@ -537,7 +549,7 @@ function abrirEdicaoProduto(produtoId) {
   const produto = produtos.find(p => p.id === produtoId);
   if (!produto) return;
   const selectCat = document.getElementById('edit-prod-categoria');
-  if (selectCat) selectCat.innerHTML = categorias.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+  if (selectCat) selectCat.innerHTML = categorias.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join('');
   document.getElementById('edit-prod-id').value = produtoId;
   document.getElementById('edit-prod-nome').value = produto.nome;
   document.getElementById('edit-prod-preco').value = produto.preco.toFixed(2);
@@ -639,8 +651,8 @@ function renderItems() {
     <div class="item-row">
       <div class="item-qty">${item.qty}x</div>
       <div class="item-details">
-        <div class="item-name">${item.nome}</div>
-        ${item.nota ? `<div class="item-note-text">${item.nota}</div>` : ''}
+        <div class="item-name">${esc(item.nome)}</div>
+        ${item.nota ? `<div class="item-note-text">${esc(item.nota)}</div>` : ''}
         <button class="item-edit" onclick="editarItemNota(${i})" style="background:none; border:none; cursor:pointer; font-size:11px; text-align:left; padding:0; color:var(--text-dim); text-decoration:underline;">+ Nota</button>
       </div>
       <div class="item-price-col">
@@ -685,7 +697,7 @@ function renderProdutosComanda() {
   grid.innerHTML = produtosFiltrados.map(produto => `
     <div class="produto-card" onclick="adicionarProdutoComanda(${produto.id})">
       <div class="produto-card-info">
-        <div class="produto-card-nome">${produto.nome}</div>
+        <div class="produto-card-nome">${esc(produto.nome)}</div>
         <div class="produto-card-price">R$ ${produto.preco.toFixed(2)}</div>
       </div>
       <div class="produto-card-add">＋</div>
@@ -776,12 +788,12 @@ function renderComandas() {
     <div class="comanda-card">
       <div class="comanda-header">
         <div class="comanda-info">
-          <h3 style="color:var(--text-main);">Mesa ${c.mesa || c.nome}</h3>
+          <h3 style="color:var(--text-main);">Mesa ${esc(c.mesa || c.nome)}</h3>
           <div class="comanda-meta">
-            <span>${c.nome}</span>
+            <span>${esc(c.nome)}</span>
             <span>·</span>
-            <span>${c.hora || '--'}</span>
-            ${c.operador ? `<span>· Atend: ${c.operador}</span>` : ''}
+            <span>${esc(c.hora || '--')}</span>
+            ${c.operador ? `<span>· Atend: ${esc(c.operador)}</span>` : ''}
           </div>
         </div>
         <span class="badge badge-info">${c.itens.length} item${c.itens.length !== 1 ? 's' : ''}</span>
@@ -793,8 +805,8 @@ function renderComandas() {
               <div style="display:flex; align-items:center; flex:1; gap:10px;">
                 <span style="font-weight:800; font-size:12px; color:var(--text-main); background:var(--gold-light); padding:4px 8px; border-radius:6px;">${item.qty}x</span>
                 <div style="display:flex; flex-direction:column; gap:2px;">
-                  <span style="font-weight:700; font-size:13px; color:var(--text-main);">${item.nome}</span>
-                  ${item.nota ? `<span style="font-size:11px; color:var(--text-dim); font-style:italic;">${item.nota}</span>` : ''}
+                  <span style="font-weight:700; font-size:13px; color:var(--text-main);">${esc(item.nome)}</span>
+                  ${item.nota ? `<span style="font-size:11px; color:var(--text-dim); font-style:italic;">${esc(item.nota)}</span>` : ''}
                 </div>
               </div>
               <div style="display:flex; align-items:center; gap:12px;">
@@ -885,7 +897,7 @@ function renderSplitItems() {
   splitSelection = [];
   list.innerHTML = comandaParaFechar.itens.map((item, i) => `
     <label class="split-item">
-      <span><input type="checkbox" onchange="toggleSplitItem(${i}, this.checked)"> ${item.qty}× ${item.nome}</span>
+      <span><input type="checkbox" onchange="toggleSplitItem(${i}, this.checked)"> ${item.qty}× ${esc(item.nome)}</span>
       <span>R$ ${(item.preco * item.qty).toFixed(2)}</span>
     </label>
   `).join('');
@@ -1500,16 +1512,16 @@ function renderCaixa() {
           const valor = (c.totalFinal ?? c.total).toFixed(2);
           const cls = _badgeClass(c.formaPagamento);
           const pagBadge = c.formaPagamento
-            ? `<span class="badge ${cls}">${c.formaPagamento}</span>` : '--';
+            ? `<span class="badge ${cls}">${esc(c.formaPagamento)}</span>` : '--';
           return `
             <tr>
-              <td style="color:var(--text-muted); white-space:nowrap;">${c.horaFechamento || '--'}</td>
-              <td>Mesa ${c.mesa}</td>
+              <td style="color:var(--text-muted); white-space:nowrap;">${esc(c.horaFechamento || '--')}</td>
+              <td>Mesa ${esc(c.mesa)}</td>
               <td>
-                <div style="font-weight:600;">${c.nome}</div>
+                <div style="font-weight:600;">${esc(c.nome)}</div>
                 ${Array.isArray(c.itens) && c.itens.length ? `
                 <div style="font-size:11px; color:var(--text-muted); margin-top:3px;">
-                  ${c.itens.map(it => `${it.qty}× ${it.nome}`).join(' · ')}
+                  ${c.itens.map(it => `${it.qty}× ${esc(it.nome)}`).join(' · ')}
                 </div>` : ''}
               </td>
               <td>
@@ -1518,8 +1530,8 @@ function renderCaixa() {
               </td>
               <td>${pagBadge}</td>
               <td style="font-size:12px; line-height:1.6;">
-                <span style="color:var(--text-muted);">↑ ${c.operador || '--'}</span><br>
-                <span style="color:var(--text-main); font-weight:600;">↓ ${c.operadorFechamento || '--'}</span>
+                <span style="color:var(--text-muted);">↑ ${esc(c.operador || '--')}</span><br>
+                <span style="color:var(--text-main); font-weight:600;">↓ ${esc(c.operadorFechamento || '--')}</span>
               </td>
             </tr>`;        }).join('')}
       </tbody>
@@ -1804,7 +1816,7 @@ function renderRelatorios() {
   const relRanking = document.getElementById('relatorio-ranking');
   relRanking.innerHTML = ranking.length ? ranking.slice(0, 5).map(item => `
     <div class="report-bar">
-      <span class="report-bar-label">${item.name}</span>
+      <span class="report-bar-label">${esc(item.name)}</span>
       <div class="report-bar-fill"><span style="width:${Math.min(100, item.qty * 8)}%;"></span></div>
       <strong>${item.qty}</strong>
     </div>
@@ -1864,8 +1876,8 @@ function renderListaSaidas() {
   list.innerHTML = ultimas.map(s => `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:0.75rem; background:var(--cream); border-radius:10px; border:1px solid var(--border-light);">
       <div>
-        <div style="font-weight:600; font-size:14px;">${s.descricao}</div>
-        <div style="font-size:12px; color:var(--text-muted);">${s.data} · ${s.categoria}</div>
+        <div style="font-weight:600; font-size:14px;">${esc(s.descricao)}</div>
+        <div style="font-size:12px; color:var(--text-muted);">${esc(s.data)} · ${esc(s.categoria)}</div>
       </div>
       <span style="font-family:'DM Mono',monospace; font-weight:700; color:var(--red);">− R$ ${s.valor.toFixed(2)}</span>
     </div>
@@ -1986,14 +1998,14 @@ function renderListaCompras() {
   list.innerHTML = compras.slice(-10).reverse().map(c => `
     <div style="padding:0.875rem; background:var(--cream); border-radius:10px; border:1px solid var(--border-light);">
       <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-        <strong style="font-size:14px;">${c.fornecedor}</strong>
+        <strong style="font-size:14px;">${esc(c.fornecedor)}</strong>
         <span style="font-weight:700; color:var(--brown-mid); font-family:'DM Mono',monospace;">R$ ${c.valor.toFixed(2)}</span>
       </div>
       <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">
-        ${c.data} · ${c.pagamento} · <span style="color:${c.status === 'A pagar' ? 'var(--red)' : 'var(--green)'};">${c.status}</span> · ${c.categoria}
-        ${c.nf ? ` · NF: ${c.nf}` : ''}
+        ${esc(c.data)} · ${esc(c.pagamento)} · <span style="color:${c.status === 'A pagar' ? 'var(--red)' : 'var(--green)'};">${esc(c.status)}</span> · ${esc(c.categoria)}
+        ${c.nf ? ` · NF: ${esc(c.nf)}` : ''}
       </div>
-      ${c.itens ? `<div style="font-size:11px; color:var(--text-muted); font-style:italic; margin-bottom:6px;">↳ ${c.itens}</div>` : ''}
+      ${c.itens ? `<div style="font-size:11px; color:var(--text-muted); font-style:italic; margin-bottom:6px;">↳ ${esc(c.itens)}</div>` : ''}
       <div style="display:flex; gap:6px;">
         <button class="btn btn-ghost btn-sm" onclick="abrirEdicaoCompra(${c.id})">Editar</button>
         <button class="btn btn-danger btn-sm" onclick="removerCompra(${c.id})">Excluir</button>
@@ -2139,8 +2151,8 @@ function renderFornecedores() {
   const list = document.getElementById('fornecedores-list');
   list.innerHTML = fornecedores.length ? fornecedores.map(f => `
     <div style="padding:0.75rem; background:var(--cream); border-radius:10px; border:1px solid var(--border-light);">
-      <strong>${f.nome}</strong> · <span style="font-size:12px; color:var(--text-muted);">${f.tipo}</span>
-      ${f.cnpj ? `<br><span style="font-size:11px; color:var(--text-muted);">${f.cnpj}</span>` : ''}
+      <strong>${esc(f.nome)}</strong> · <span style="font-size:12px; color:var(--text-muted);">${esc(f.tipo)}</span>
+      ${f.cnpj ? `<br><span style="font-size:11px; color:var(--text-muted);">${esc(f.cnpj)}</span>` : ''}
       <div style="display:flex; gap:6px; margin-top:6px;">
         <button class="btn btn-ghost btn-sm" onclick="abrirEdicaoFornecedor(${f.id})">Editar</button>
         <button class="btn btn-danger btn-sm" onclick="removerFornecedor(${f.id})">Excluir</button>
@@ -2158,7 +2170,7 @@ function renderFornecedores() {
     const maxVal = Math.max(...Object.values(ranking));
     rankingEl.innerHTML = Object.entries(ranking).sort((a, b) => b[1] - a[1]).map(([nome, valor]) => `
       <div class="report-bar">
-        <span class="report-bar-label">${nome}</span>
+        <span class="report-bar-label">${esc(nome)}</span>
         <div class="report-bar-fill"><span style="width:${(valor / maxVal) * 100}%;"></span></div>
         <strong>R$ ${valor.toFixed(2)}</strong>
       </div>
@@ -2667,7 +2679,7 @@ function setMesaSuggestions() {
     document.body.appendChild(dataList);
   }
   const mesas = JSON.parse(config.mesas || '[1,2,3,4,5,6,7,8,9,10]');
-  dataList.innerHTML = mesas.map(m => `<option value="${m}">`).join('');
+  dataList.innerHTML = mesas.map(m => `<option value="${esc(m)}">`).join('');
 }
 
 // =================== INIT ===================

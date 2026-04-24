@@ -1,5 +1,6 @@
-const router = require('express').Router();
-const db     = require('../db');
+const router    = require('express').Router();
+const db        = require('../db');
+const checkRole = require('../middleware/checkRole');
 
 // Helper: busca comanda com itens agregados
 async function fetchComanda(id, client) {
@@ -69,14 +70,30 @@ router.post('/', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    const { nome, mesa, itens = [], total, hora, data, abertura, operador, parentId } = req.body;
+    const { nome, mesa, itens = [], hora, data, abertura, operador, parentId } = req.body;
     if (!nome) return res.status(400).json({ error: 'Nome do cliente obrigatório' });
+
+    // Validação de itens: qty > 0, preco >= 0 (V-01)
+    for (const item of itens) {
+      const qty = Number(item.qty);
+      const preco = Number(item.preco);
+      if (!Number.isFinite(qty) || qty < 1) {
+        return res.status(400).json({ error: 'Quantidade inválida' });
+      }
+      if (!Number.isFinite(preco) || preco < 0) {
+        return res.status(400).json({ error: 'Preço inválido' });
+      }
+    }
+    // Recalcula total no servidor, ignora valor do cliente
+    const totalServidor = itens.reduce(
+      (s, i) => s + Number(i.preco) * Number(i.qty), 0
+    );
 
     const { rows } = await client.query(
       `INSERT INTO comandas (nome, mesa, total, hora, data, abertura, operador, status, parent_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'aberta', $8)
        RETURNING id`,
-      [nome, mesa || null, total || 0, hora || null, data || null,
+      [nome, mesa || null, totalServidor, hora || null, data || null,
        abertura || new Date().toISOString(), operador || null, parentId || null]
     );
     const comandaId = rows[0].id;
@@ -110,12 +127,30 @@ router.post('/', async (req, res) => {
 // PUT /api/comandas/:id
 // Body: { nome?, mesa?, total?, itens?: [...] }
 // Substitui todos os itens se itens vier no body
-router.put('/:id', async (req, res) => {
+router.put('/:id', checkRole('Gerente', 'Atendente'), async (req, res) => {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
 
-    const { nome, mesa, total, hora, data, operador, itens } = req.body;
+    const { nome, mesa, hora, data, operador, itens } = req.body;
+
+    // Validação + recálculo de total se itens forem enviados (V-01)
+    let totalServidor = null;
+    if (Array.isArray(itens)) {
+      for (const item of itens) {
+        const qty = Number(item.qty);
+        const preco = Number(item.preco);
+        if (!Number.isFinite(qty) || qty < 1) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'Quantidade inválida' });
+        }
+        if (!Number.isFinite(preco) || preco < 0) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'Preço inválido' });
+        }
+      }
+      totalServidor = itens.reduce((s, i) => s + Number(i.preco) * Number(i.qty), 0);
+    }
 
     await client.query(
       `UPDATE comandas
@@ -126,7 +161,7 @@ router.put('/:id', async (req, res) => {
            data     = COALESCE($5, data),
            operador = COALESCE($6, operador)
        WHERE id = $7`,
-      [nome, mesa, total, hora, data, operador, req.params.id]
+      [nome, mesa, totalServidor, hora, data, operador, req.params.id]
     );
 
     if (Array.isArray(itens)) {
@@ -160,7 +195,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/comandas/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', checkRole('Gerente'), async (req, res) => {
   try {
     await db.query('DELETE FROM comandas WHERE id = $1', [req.params.id]);
     res.json({ ok: true });
@@ -172,7 +207,7 @@ router.delete('/:id', async (req, res) => {
 
 // POST /api/comandas/:id/fechar
 // Body: { desconto, descontoPercentual, totalFinal, formaPagamento }
-router.post('/:id/fechar', async (req, res) => {
+router.post('/:id/fechar', checkRole('Gerente', 'Atendente'), async (req, res) => {
   const client = await db.connect();
   try {
     await client.query('BEGIN');
@@ -189,8 +224,34 @@ router.post('/:id/fechar', async (req, res) => {
       return res.status(409).json({ error: 'Nenhum caixa aberto. Abra o caixa antes de concluir uma venda.' });
     }
 
-    const { desconto = 0, descontoPercentual = 0, totalFinal, formaPagamento, operadorFechamento = '' } = req.body;
+    const { desconto = 0, descontoPercentual = 0, formaPagamento, operadorFechamento = '' } = req.body;
     if (!formaPagamento) return res.status(400).json({ error: 'Forma de pagamento obrigatória' });
+
+    // ─── Validação financeira server-side (V-01) ────────────────────────────
+    // O total é SEMPRE recalculado a partir dos itens persistidos na comanda.
+    // Os valores enviados pelo cliente são ignorados para o total; desconto é validado.
+    const totalServidor = (comanda.itens || []).reduce(
+      (s, item) => s + (Number(item.preco) * Number(item.qty)), 0
+    );
+
+    const descontoVal  = Number(desconto) || 0;
+    const descontoPerc = Number(descontoPercentual) || 0;
+
+    if (descontoVal < 0 || descontoPerc < 0 || descontoPerc > 100) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Desconto inválido' });
+    }
+    if (descontoVal > totalServidor) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Desconto excede o total' });
+    }
+    if (descontoVal > 0 && req.user.role !== 'Gerente') {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'Apenas Gerente pode aplicar desconto' });
+    }
+
+    const totalFinalCalculado = Math.max(0, totalServidor - descontoVal);
+    // ────────────────────────────────────────────────────────────────────────
 
     const agora = new Date();
     const horaFechamento = agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
@@ -205,11 +266,11 @@ router.post('/:id/fechar', async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,'fechada',$8,$9,$10,$11,$12,$13,$14,$15)
        RETURNING id`,
       [
-        comanda.nome, comanda.mesa, comanda.total,
+        comanda.nome, comanda.mesa, totalServidor,
         comanda.hora, comanda.data, comanda.abertura, comanda.operador,
         horaFechamento, dataFechamento, agora.toISOString(),
-        desconto, descontoPercentual,
-        totalFinal != null ? totalFinal : comanda.total,
+        descontoVal, descontoPerc,
+        totalFinalCalculado,
         formaPagamento, operadorFechamento,
       ]
     );
@@ -239,7 +300,7 @@ router.post('/:id/fechar', async (req, res) => {
 });
 
 // POST /api/comandas/:id/cancelar
-router.post('/:id/cancelar', async (req, res) => {
+router.post('/:id/cancelar', checkRole('Gerente'), async (req, res) => {
   const client = await db.connect();
   try {
     await client.query('BEGIN');

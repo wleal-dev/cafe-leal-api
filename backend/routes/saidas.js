@@ -1,5 +1,6 @@
-const router = require('express').Router();
-const db     = require('../db');
+const router    = require('express').Router();
+const db        = require('../db');
+const checkRole = require('../middleware/checkRole');
 
 // GET /api/saidas
 router.get('/', async (req, res) => {
@@ -15,17 +16,21 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/saidas
-router.post('/', async (req, res) => {
+router.post('/', checkRole('Gerente', 'Financeiro'), async (req, res) => {
   try {
     const { data, descricao, categoria, valor } = req.body;
     if (!data || !descricao || valor == null) {
       return res.status(400).json({ error: 'Data, descrição e valor obrigatórios' });
     }
+    const valorNum = Number(valor);
+    if (!Number.isFinite(valorNum) || valorNum < 0) {
+      return res.status(400).json({ error: 'Valor inválido' });
+    }
     const { rows } = await db.query(
       `INSERT INTO saidas (data, descricao, categoria, valor)
        VALUES ($1, $2, $3, $4)
        RETURNING id, data, descricao, categoria, valor`,
-      [data, descricao, categoria || null, valor]
+      [data, descricao, categoria || null, valorNum]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -35,7 +40,7 @@ router.post('/', async (req, res) => {
 });
 
 // DELETE /api/saidas/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', checkRole('Gerente', 'Financeiro'), async (req, res) => {
   try {
     await db.query('DELETE FROM saidas WHERE id = $1', [req.params.id]);
     res.json({ ok: true });

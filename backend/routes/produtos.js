@@ -25,11 +25,15 @@ router.post('/', checkRole('Gerente'), async (req, res) => {
     if (!nome || preco == null) {
       return res.status(400).json({ error: 'Nome e preço obrigatórios' });
     }
+    const precoNum = Number(preco);
+    if (!Number.isFinite(precoNum) || precoNum < 0) {
+      return res.status(400).json({ error: 'Preço inválido' });
+    }
     const { rows } = await db.query(
       `INSERT INTO produtos (nome, preco, categoria_id)
        VALUES ($1, $2, $3)
        RETURNING id, nome, preco, categoria_id AS "categoriaId"`,
-      [nome, preco, categoriaId || null]
+      [nome, precoNum, categoriaId || null]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -44,6 +48,10 @@ router.put('/:id', checkRole('Gerente'), async (req, res) => {
     const { nome, preco, categoriaId } = req.body;
     if (!nome || preco == null) {
       return res.status(400).json({ error: 'Nome e preço obrigatórios' });
+    }
+    const precoNum = Number(preco);
+    if (!Number.isFinite(precoNum) || precoNum < 0) {
+      return res.status(400).json({ error: 'Preço inválido' });
     }
     const { rows } = await db.query(
       `UPDATE produtos

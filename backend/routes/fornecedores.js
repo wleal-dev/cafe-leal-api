@@ -1,5 +1,6 @@
-const router = require('express').Router();
-const db     = require('../db');
+const router    = require('express').Router();
+const db        = require('../db');
+const checkRole = require('../middleware/checkRole');
 
 // GET /api/fornecedores
 router.get('/', async (req, res) => {
@@ -15,7 +16,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/fornecedores
-router.post('/', async (req, res) => {
+router.post('/', checkRole('Gerente', 'Financeiro'), async (req, res) => {
   try {
     const { nome, cnpj, tipo } = req.body;
     if (!nome) return res.status(400).json({ error: 'Nome obrigatório' });
@@ -34,7 +35,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/fornecedores/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', checkRole('Gerente', 'Financeiro'), async (req, res) => {
   try {
     const { nome, cnpj, tipo } = req.body;
     if (!nome) return res.status(400).json({ error: 'Nome obrigatório' });
@@ -55,7 +56,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/fornecedores/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', checkRole('Gerente', 'Financeiro'), async (req, res) => {
   try {
     await db.query('DELETE FROM fornecedores WHERE id = $1', [req.params.id]);
     res.json({ ok: true });

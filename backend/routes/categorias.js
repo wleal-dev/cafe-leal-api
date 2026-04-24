@@ -1,5 +1,6 @@
-const router = require('express').Router();
-const db     = require('../db');
+const router    = require('express').Router();
+const db        = require('../db');
+const checkRole = require('../middleware/checkRole');
 
 // GET /api/categorias
 router.get('/', async (req, res) => {
@@ -13,7 +14,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/categorias
-router.post('/', async (req, res) => {
+router.post('/', checkRole('Gerente'), async (req, res) => {
   try {
     const { nome } = req.body;
     if (!nome) return res.status(400).json({ error: 'Nome obrigatório' });
@@ -30,7 +31,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/categorias/:id
-router.put('/:id', async (req, res) => {
+router.put('/:id', checkRole('Gerente'), async (req, res) => {
   try {
     const { nome } = req.body;
     if (!nome) return res.status(400).json({ error: 'Nome obrigatório' });
@@ -48,7 +49,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/categorias/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', checkRole('Gerente'), async (req, res) => {
   try {
     await db.query('DELETE FROM categorias WHERE id = $1', [req.params.id]);
     res.json({ ok: true });

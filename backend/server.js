@@ -1,5 +1,10 @@
 require('dotenv').config({ path: __dirname + '/.env' });
 
+// Valida força mínima do JWT_SECRET antes de subir o servidor (V-05)
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET ausente ou fraco (mínimo 32 caracteres).');
+}
+
 const express = require('express');
 const helmet  = require('helmet');
 const path    = require('path');
@@ -20,7 +25,19 @@ const rotasCaixas        = require('./routes/caixas');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc:  ["'self'"],
+      styleSrc:   ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc:    ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc:     ["'self'", 'data:'],
+      connectSrc: ["'self'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+}));
 
 // Body parser — limite 10mb para suportar foto base64 em compras
 app.use(express.json({ limit: '10mb' }));
